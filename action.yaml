@@ -11,7 +11,7 @@ inputs:
     default: 'false'
     required: false
   jobs:
-    description: Comma or newline separated list of names of job dependencies for this step
+    description: Comma or newline separated list of names of job dependencies for this step, it must be `name:` property of job if set
     required: true
   outputsFrom:
     description: Comma separated list of JSON artifacts from (jobs in) this build that will be parse to set as output for this step

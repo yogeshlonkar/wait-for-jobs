@@ -16507,7 +16507,7 @@ class WaitForJobs {
             (0, core_1.startGroup)(`checking status of jobs: ${pending} ${withSuffix}`);
             for (;;) {
                 const { total_count, jobs } = yield (0, github_1.getCurrentJobs)(token);
-                (0, core_1.debug)(`found total_count: ${total_count}`);
+                (0, core_1.debug)(`current run jobs: ${total_count}`);
                 const fullFilled = this.jobNames
                     .map(name => this.toCheck(name, jobs))
                     .filter(this.empty)
