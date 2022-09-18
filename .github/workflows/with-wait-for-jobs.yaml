@@ -1,0 +1,63 @@
+name: With wait-for-jobs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  start:
+    name: Start
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Some step"
+  job1:
+    name: Job 1
+    needs: start
+    runs-on: ubuntu-latest
+    outputs:
+      out1: ${{ steps.s1.outputs.out1 }}
+    steps:
+      - run: sleep 10
+      - id: s1
+        run: echo "::set-output name=out1::test-1"
+  job2:
+    name: Job 2
+    needs: start
+    runs-on: ubuntu-latest
+    outputs:
+      out2: ${{ steps.s2.outputs.out2 }}
+    steps:
+      - run: sleep 15
+      - id: s2
+        run: echo "::set-output name=out2::test-2"
+  job3:
+    name: Job 3
+    needs: start
+    runs-on: ubuntu-latest
+    outputs:
+      out3: ${{ steps.s3.outputs.out3 }}
+    steps:
+      - run: sleep 90
+      - id: s3
+        run: echo "::set-output name=out3::test-3"
+      - run: |
+          echo '{"out3":"test-3"}' > output3.json
+      - uses: actions/upload-artifact@v3
+        with:
+          name: output3.json
+          path: output3.json
+  job4:
+    name: Job 4
+    needs: [job1, job2, job3]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Some step that can run without job 3:: ${{ needs.job1.outputs.out1 }} :: ${{ needs.job2.outputs.out2 }}"
+      - uses: actions/checkout@v3
+      - id: wait-for-jobs
+        uses: ./
+        with:
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
+          jobs: job3
+          outputsFrom: output3.json
+      - run: |
+          echo "Some step that needs job 3:: ${{ fromJSON(steps.wait-for-jobs.outputs.outputs).out3 }}"

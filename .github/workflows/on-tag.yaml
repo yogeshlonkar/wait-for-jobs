@@ -1,0 +1,26 @@
+name: Push major tag
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  tag-major:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check and create major tag
+        run: |
+          semver="v[[:digit:]]+[.][[:digit:]]"
+          if [[ "${{ github.ref_name }}" =~ ${semver} ]]; then
+            if [[ "${{ github.ref_name }}" == *"-rc"* ]]; then
+              echo "Ignoring rc version"
+            else
+              echo "Pushing ${major}"
+              major=$(echo "${{ github.ref_name }}" | cut -d '.' -f 1)
+              git tag -f ${major}
+              git push -f origin ${major}
+            fi
+          fi
+    

@@ -21,12 +21,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set Node.js 16.x
-        uses: actions/setup-node@v2.5.1
+        uses: actions/setup-node@v3
         with:
           node-version: 16.x
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -34,7 +35,6 @@ jobs:
       - name: Rebuild the dist/ directory
         run: |
           npm run build
-          npm run package
 
       - name: Compare the expected and actual dist/ directories
         run: |
