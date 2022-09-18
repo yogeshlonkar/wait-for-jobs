@@ -1,7 +1,6 @@
 name: With wait-for-jobs
 
-on:
-  workflow_dispatch:
+on: push
 
 jobs:
   start:
@@ -45,6 +44,7 @@ jobs:
         with:
           name: output3.json
           path: output3.json
+          retention-days: 1
   job4:
     name: Job 4
     needs: [job1, job2]

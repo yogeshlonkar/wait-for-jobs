@@ -1,7 +1,6 @@
 name: Without wait-for-jobs
 
-on:
-  workflow_dispatch:
+on: push
 
 jobs:
   start:
