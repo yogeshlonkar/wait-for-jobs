@@ -16105,6 +16105,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getCurrentJobs = void 0;
+const core_1 = __nccwpck_require__(2186);
 const rest_1 = __nccwpck_require__(5375);
 const context_1 = __nccwpck_require__(8557);
 /**
@@ -16119,6 +16120,7 @@ function getCurrentJobs(token) {
         const { runId: run_id, runAttempt: attempt_number, repo: { owner, repo } } = new context_1.Context();
         // prettier-ignore
         const { actions: { listJobsForWorkflowRunAttempt } } = new rest_1.Octokit({ auth: token });
+        (0, core_1.debug)(`fetching jobs for /repos/${owner}/${repo}/actions/runs/${run_id}/attempts/${attempt_number}/jobs`);
         const { status, data } = yield listJobsForWorkflowRunAttempt({
             attempt_number,
             owner,
@@ -16504,7 +16506,8 @@ class WaitForJobs {
             const { setOutputs } = this;
             (0, core_1.startGroup)(`checking status of jobs: ${pending} ${withSuffix}`);
             for (;;) {
-                const { jobs } = yield (0, github_1.getCurrentJobs)(token);
+                const { total_count, jobs } = yield (0, github_1.getCurrentJobs)(token);
+                (0, core_1.debug)(`found total_count: ${total_count}`);
                 const fullFilled = this.jobNames
                     .map(name => this.toCheck(name, jobs))
                     .filter(this.empty)

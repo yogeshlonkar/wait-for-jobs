@@ -1,3 +1,4 @@
+import { debug } from "@actions/core";
 import { components } from "@octokit/openapi-types/types.d";
 import { Octokit } from "@octokit/rest";
 
@@ -30,6 +31,7 @@ export async function getCurrentJobs(token: string): Promise<Jobs> {
     const { runId: run_id, runAttempt: attempt_number, repo: { owner, repo } } = new Context();
     // prettier-ignore
     const { actions: { listJobsForWorkflowRunAttempt } } = new Octokit({ auth: token });
+    debug(`fetching jobs for /repos/${owner}/${repo}/actions/runs/${run_id}/attempts/${attempt_number}/jobs`);
     const { status, data } = await listJobsForWorkflowRunAttempt({
         attempt_number,
         owner,

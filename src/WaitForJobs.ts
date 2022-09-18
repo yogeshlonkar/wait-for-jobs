@@ -102,7 +102,8 @@ export default class WaitForJobs {
         const { setOutputs } = this;
         startGroup(`checking status of jobs: ${pending} ${withSuffix}`);
         for (;;) {
-            const { jobs } = await getCurrentJobs(token);
+            const { total_count, jobs } = await getCurrentJobs(token);
+            debug(`found total_count: ${total_count}`);
             const fullFilled = this.jobNames
                 .map(name => this.toCheck(name, jobs))
                 .filter(this.empty)
