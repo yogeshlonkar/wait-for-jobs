@@ -1,6 +1,7 @@
 # Wait for jobs [![Build & Tests](https://github.com/yogeshlonkar/wait-for-jobs/actions/workflows/on-push.yaml/badge.svg)](https://github.com/yogeshlonkar/wait-for-jobs/actions/workflows/on-push.yaml)
 
-Wait for the specified jobs in the same run to be complete successfully before proceeding, helpful to prestart the job
+Wait for the specified jobs in the same run to be complete successfully before proceeding, helpful to prestart the job.
+This action is beneficial when depedee job has steps that can run/ finish before one of the depdencies is finished.
 
 [**Without wait-for-jobs**][without-wait-for-jobs-run]
 
