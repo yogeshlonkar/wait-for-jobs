@@ -16023,7 +16023,7 @@ const context_1 = __nccwpck_require__(8557);
 function getOutput(artifactName) {
     return __awaiter(this, void 0, void 0, function* () {
         const { tempDir } = new context_1.Context();
-        const resolvedPath = (0, path_1.resolve)(tempDir, artifactName);
+        const resolvedPath = (0, path_1.resolve)(tempDir);
         (0, core_1.debug)(`Storing output in ${resolvedPath}`);
         const artifactClient = (0, artifact_1.create)();
         // download outputs.json artifact
@@ -16032,7 +16032,7 @@ function getOutput(artifactName) {
         const downloadResponse = yield artifactClient.downloadArtifact(artifactName, resolvedPath, downloadOptions);
         (0, core_1.debug)(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
         const readFile = (0, util_1.promisify)(fs_1.default.readFile);
-        const data = yield readFile(downloadResponse.downloadPath);
+        const data = yield readFile((0, path_1.resolve)(downloadResponse.downloadPath, artifactName));
         return JSON.parse(data.toString());
     });
 }
@@ -16311,6 +16311,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.valuesFrom = void 0;
 /**
  * RegExp matcher for string values with given expected delimiter
+ * https://regex101.com/r/MN05hH/1
  *
  * @param delimiter
  */

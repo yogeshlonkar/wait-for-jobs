@@ -2,6 +2,7 @@ import "../../test.globals";
 
 import { create } from "@actions/artifact";
 import { debug, info } from "@actions/core";
+import { resolve } from "path";
 import { promisify } from "util";
 
 import { getOutput } from "./artifacts";
@@ -47,6 +48,8 @@ describe("getOutput", () => {
             result: "success",
             abc: "xyz"
         });
+        const expected = resolve("some/some-output.json");
+        expect(readFile).toBeCalledWith(expected);
     });
 
     afterEach(() => {

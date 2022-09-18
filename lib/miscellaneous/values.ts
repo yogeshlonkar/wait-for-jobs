@@ -1,5 +1,6 @@
 /**
  * RegExp matcher for string values with given expected delimiter
+ * https://regex101.com/r/MN05hH/1
  *
  * @param delimiter
  */

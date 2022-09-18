@@ -14,7 +14,7 @@ import { Context } from "./context";
  */
 export async function getOutput(artifactName: string): Promise<Record<string, unknown>> {
     const { tempDir } = new Context();
-    const resolvedPath = resolve(tempDir, artifactName);
+    const resolvedPath = resolve(tempDir);
     debug(`Storing output in ${resolvedPath}`);
     const artifactClient = create();
     // download outputs.json artifact
@@ -23,6 +23,6 @@ export async function getOutput(artifactName: string): Promise<Record<string, un
     const downloadResponse = await artifactClient.downloadArtifact(artifactName, resolvedPath, downloadOptions);
     debug(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
     const readFile = promisify(fs.readFile);
-    const data = await readFile(downloadResponse.downloadPath);
+    const data = await readFile(resolve(downloadResponse.downloadPath, artifactName));
     return JSON.parse(data.toString());
 }
