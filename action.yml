@@ -2,6 +2,10 @@ name: Wait for jobs
 
 description: Wait for the specified jobs in the same run to be complete successfully before proceeding, helpful to prestart the job
 
+branding:
+  icon: 'check-square'
+  color: 'gray-dark'
+
 inputs:
   gh-token:
     description: GitHub token to access API
