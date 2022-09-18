@@ -1,6 +1,6 @@
 # Wait for jobs [![Build & Tests](https://github.com/yogeshlonkar/wait-for-jobs/actions/workflows/on-push.yaml/badge.svg)](https://github.com/yogeshlonkar/wait-for-jobs/actions/workflows/on-push.yaml)
 
-Wait for the specified jobs in the same run to be complete successfully before proceeding, helpful to prestart the job. This action is beneficial when dependee job has steps that can run/ finish before the dependencies are completed.
+Currently GitHub Actions doesn't have a native way (`needs`) to wait for jobs in a step. This action allows to wait for the specified jobs in the same run to be complete successfully before proceeding. Such a behavior is beneficial when dependee job has steps that can run/ finish before the job dependencies are completed or out from them is actually required.
 
 [**Without wait-for-jobs**][without-wait-for-jobs-run]
 
