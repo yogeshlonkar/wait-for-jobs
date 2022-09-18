@@ -35,4 +35,4 @@ outputs:
 
 runs:
   using: node16
-  main: ../../dist/wait-for-jobs/index.js
+  main: dist/index.js
