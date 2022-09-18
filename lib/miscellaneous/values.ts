@@ -3,8 +3,7 @@
  *
  * @param delimiter
  */
-const matcher = (delimiter: string) =>
-    new RegExp(`(".*?"|'.*?'|[^"'${delimiter}\\s]+)(?=\\s*${delimiter}|\\s*$)`, "gm");
+const matcher = (delimiter: string) => new RegExp(`(".*?"|'.*?'|[^"'${delimiter}]+)(?=\\s*${delimiter}|\\s*$)`, "gm");
 
 /**
  * Split value using delimiter

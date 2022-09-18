@@ -225,4 +225,13 @@ describe("wait-for-jobs", () => {
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
         expect(sleep).toBeCalledWith(15 * 60 * 1000, expect.anything(), "action-timeout");
     });
+
+    test("handle job names with spaces", async () => {
+        getInput.asMock().mockReset();
+        for (const input of ["some-gh-token", "Job 2", "false", "true", "2000", "16"]) {
+            getInput.asMock().mockReturnValueOnce(input);
+        }
+        await expect(new WaitForJobs().start()).resolves.toBeUndefined();
+        expect(sleep).toBeCalledWith(15 * 60 * 1000, expect.anything(), "action-timeout");
+    });
 });

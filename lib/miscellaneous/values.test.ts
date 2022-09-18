@@ -26,6 +26,11 @@ describe("valuesFrom", () => {
         expect(actual).toEqual(["a"]);
     });
 
+    test("returns Array<string> with values containing spaces", () => {
+        const actual = valuesFrom("Job a, Job b");
+        expect(actual).toEqual(["Job a", "Job b"]);
+    });
+
     test("returns Array<string> with single value with # delimiter", () => {
         const actual = valuesFrom("a", "#");
         expect(actual).toEqual(["a"]);

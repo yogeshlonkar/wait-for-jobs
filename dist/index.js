@@ -16314,7 +16314,7 @@ exports.valuesFrom = void 0;
  *
  * @param delimiter
  */
-const matcher = (delimiter) => new RegExp(`(".*?"|'.*?'|[^"'${delimiter}\\s]+)(?=\\s*${delimiter}|\\s*$)`, "gm");
+const matcher = (delimiter) => new RegExp(`(".*?"|'.*?'|[^"'${delimiter}]+)(?=\\s*${delimiter}|\\s*$)`, "gm");
 /**
  * Split value using delimiter
  *
