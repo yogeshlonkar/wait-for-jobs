@@ -35,7 +35,7 @@ jobs:
     outputs:
       out3: ${{ steps.s3.outputs.out3 }}
     steps:
-      - run: sleep 90
+      - run: sleep 60
       - id: s3
         run: echo "::set-output name=out3::test-3"
       - run: |
@@ -52,6 +52,7 @@ jobs:
     steps:
       - run: |
           echo "Some step that can run without job 3:: ${{ needs.job1.outputs.out1 }} :: ${{ needs.job2.outputs.out2 }}"
+      - run: sleep 60
       - uses: actions/checkout@v3
       - id: wait-for-jobs
         uses: ./
