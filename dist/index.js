@@ -16460,7 +16460,7 @@ var INPUTS;
     INPUTS["JOBS"] = "jobs";
     INPUTS["SUFFIX"] = "suffix";
     INPUTS["TTL"] = "ttl";
-    INPUTS["OUTPUTS_FROM"] = "outputsFrom";
+    INPUTS["OUTPUTS_FROM"] = "outputs-from";
 })(INPUTS || (INPUTS = {}));
 class Summary {
     constructor(name, lastJob) {
@@ -16536,17 +16536,12 @@ class WaitForJobs {
             const outputs = {};
             (0, core_1.info)("getting job outputs");
             for (const outputFile of this.outputFiles) {
-                try {
-                    const jobOutputs = yield (0, github_1.getOutput)(outputFile);
-                    for (const [name, value] of Object.entries(jobOutputs)) {
-                        if (name in outputs) {
-                            (0, core_1.warning)(`overwriting previously set outputs.${name} with output from ${outputFile}`);
-                        }
-                        outputs[name] = value;
+                const jobOutputs = yield (0, github_1.getOutput)(outputFile);
+                for (const [name, value] of Object.entries(jobOutputs)) {
+                    if (name in outputs) {
+                        (0, core_1.warning)(`overwriting previously set outputs.${name} with output from ${outputFile}`);
                     }
-                }
-                catch (error) {
-                    (0, core_1.warning)(`error fetching job output: ${error.message}`);
+                    outputs[name] = value;
                 }
             }
             if (!this.outputFiles.isEmpty()) {
@@ -16598,7 +16593,7 @@ class WaitForJobs {
         this.interval = parseInt((0, core_1.getInput)(INPUTS.INTERVAL), 10);
         this.ttl = parseInt((0, core_1.getInput)(INPUTS.TTL), 10);
         if (this.ttl > 15) {
-            (0, core_1.warning)("Overwriting ttl to 15 minutes. If job depdency requires more than 15 minutes for job finish perhaps this step should not prestart");
+            (0, core_1.warning)("Overwriting ttl to 15 minutes. If depdencies requires more than 15 minutes to finish perhaps the dependee jobs should not prestart");
             this.ttl = 15;
         }
         const outputs = (0, core_1.getInput)(INPUTS.OUTPUTS_FROM);

@@ -1,6 +1,7 @@
 name: With wait-for-jobs
 
-on: push
+on:
+  workflow_dispatch:
 
 jobs:
   start:
@@ -59,6 +60,6 @@ jobs:
         with:
           gh-token: ${{ secrets.GITHUB_TOKEN }}
           jobs: Job 3
-          outputsFrom: output3.json
+          outputs-from: output3.json
       - run: |
           echo "Some step that needs job 3:: ${{ fromJSON(steps.wait-for-jobs.outputs.outputs).out3 }}"

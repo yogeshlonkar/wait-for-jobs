@@ -214,7 +214,7 @@ describe("wait-for-jobs", () => {
         });
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(warning).toBeCalledWith(`error fetching job output: error fetching job output`);
+        expect(setFailed).toBeCalledWith("error fetching job output");
     });
 
     test("handle ttl greater than 15 minutes", async () => {
@@ -224,14 +224,8 @@ describe("wait-for-jobs", () => {
         }
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
         expect(sleep).toBeCalledWith(15 * 60 * 1000, expect.anything(), "action-timeout");
-    });
-
-    test("handle job names with spaces", async () => {
-        getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "Job 2", "false", "true", "2000", "16"]) {
-            getInput.asMock().mockReturnValueOnce(input);
-        }
-        await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(sleep).toBeCalledWith(15 * 60 * 1000, expect.anything(), "action-timeout");
+        expect(warning).toBeCalledWith(
+            "Overwriting ttl to 15 minutes. If depdencies requires more than 15 minutes to finish perhaps the dependee jobs should not prestart"
+        );
     });
 });

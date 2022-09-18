@@ -12,7 +12,7 @@ enum INPUTS {
     JOBS = "jobs",
     SUFFIX = "suffix",
     TTL = "ttl",
-    OUTPUTS_FROM = "outputsFrom"
+    OUTPUTS_FROM = "outputs-from"
 }
 
 class Summary {
@@ -50,7 +50,7 @@ export default class WaitForJobs {
         this.ttl = parseInt(getInput(INPUTS.TTL), 10);
         if (this.ttl > 15) {
             warning(
-                "Overwriting ttl to 15 minutes. If job depdency requires more than 15 minutes for job finish perhaps this step should not prestart"
+                "Overwriting ttl to 15 minutes. If depdencies requires more than 15 minutes to finish perhaps the dependee jobs should not prestart"
             );
             this.ttl = 15;
         }
@@ -132,16 +132,12 @@ export default class WaitForJobs {
         const outputs = {} as Record<string, unknown>;
         info("getting job outputs");
         for (const outputFile of this.outputFiles) {
-            try {
-                const jobOutputs = await getOutput(outputFile);
-                for (const [name, value] of Object.entries(jobOutputs)) {
-                    if (name in outputs) {
-                        warning(`overwriting previously set outputs.${name} with output from ${outputFile}`);
-                    }
-                    outputs[name] = value;
+            const jobOutputs = await getOutput(outputFile);
+            for (const [name, value] of Object.entries(jobOutputs)) {
+                if (name in outputs) {
+                    warning(`overwriting previously set outputs.${name} with output from ${outputFile}`);
                 }
-            } catch (error: unknown) {
-                warning(`error fetching job output: ${(error as Error).message}`);
+                outputs[name] = value;
             }
         }
         if (!this.outputFiles.isEmpty()) {

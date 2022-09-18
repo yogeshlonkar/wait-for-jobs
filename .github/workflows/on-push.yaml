@@ -58,6 +58,6 @@ jobs:
         with:
           gh-token: ${{ secrets.GITHUB_TOKEN }}
           jobs: Job 2
-          outputsFrom: output2.json
+          outputs-from: output2.json
       - run: |
           echo "Some step that needs job 2:: ${{ fromJSON(steps.wait-for-jobs.outputs.outputs).out2 }}"
