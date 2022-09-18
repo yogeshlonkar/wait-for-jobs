@@ -1,105 +1,98 @@
-<p align="center">
-  <a href="https://github.com/actions/typescript-action/actions"><img alt="typescript-action status" src="https://github.com/actions/typescript-action/workflows/build-test/badge.svg"></a>
-</p>
+# Wait for jobs [![Build & Tests](https://github.com/yogeshlonkar/wait-for-jobs/actions/workflows/on-push.yaml/badge.svg)](https://github.com/yogeshlonkar/wait-for-jobs/actions/workflows/on-push.yaml)
 
-# Create a JavaScript Action using TypeScript
+Wait for the specified jobs in the same run to be complete successfully before proceeding, helpful to prestart the job.
+This action is beneficial when depedee job has steps that can run/ finish before one of the depdencies is finished.
 
-Use this template to bootstrap the creation of a TypeScript action.:rocket:
+[**Without wait-for-jobs**][without-wait-for-jobs-run]
 
-This template includes compilation support, tests, a validation workflow, publishing, and versioning guidance.  
+![without-wait-for-jobs](docs/without-wait-for-jobs.png)
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
+Without wait-for-jobs `Job 4` will wait for all job dependencies to be completed before starting even though some of the steps in `Job 4` can be comepleted
+without `Job 3` 
 
-## Create an action from this template
+[**With wait-for-jobs**][with-wait-for-jobs-run]
 
-Click the `Use this Template` and provide the new repo details for your action
+![with-wait-for-jobs](docs/with-wait-for-jobs.png)
 
-## Code in Main
+With wait-for-jobs `Job 4` will start once `Job 1` and `Job 2` are completed. It will complete steps that don't require `Job 3`, after thoese steps it will wait for `Job 3` to complete.
+Prestarting of `Job 4` reduces `Total duration` (not a Run time or Billable time) 
 
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
+This action uses [GitHub API][jobs-for-a-workflow-run-attempt] to fetch latest status of jobs in current run, It also can use JSON artifacts from run to set output of the step to be used in next steps
 
-Install the dependencies  
-```bash
-$ npm install
-```
+## Usage
 
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
-```
+### Pre-requisites
 
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
-
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-
-...
-```
-
-## Change action.yml
-
-The action.yml defines the inputs and output for your action.
-
-Update the action.yml with your name, description, inputs and outputs for your action.
-
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
-
-## Publish to a distribution branch
-
-Actions are run from GitHub repos so we will checkin the packed dist folder. 
-
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
-```bash
-$ npm run package
-$ git add dist
-$ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket: 
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
+This step requires below permissions, it is available by default to all the jobs but in case of shared workflows it might be necessary to set it
 
 ```yaml
-uses: ./
-with:
-  milliseconds: 1000
+permissions:
+  actions: read
 ```
 
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
+### Input
 
-## Usage:
+```yaml
+- uses: yogeshlonkar/wait-for-jobs@v0
+  with:
+    # GitHub token to access actions API
+    # required: true
+    gh-token: ${{ secrets.GITHUB_TOKEN }}
 
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
+    # To ignore jobs that are skipped from given list of job dependencies
+    # default: 'false'
+    # required: false
+    ignore-skipped: 'false'
+
+    # Comma or newline separated list of names of job dependencies for this step, it must be `name:` property of job if set
+    # required: true
+    jobs: 'job1,job2,Job 3'
+
+    # Comma separated list of JSON artifacts from (jobs in) this build that will be parse to set as output for this step
+    # required: false
+    outputs-from: 'job1_output.json,job2_output.json'
+
+    # Instead of exact job name match check suffix or job names, useful in case of reusable workflows
+    # default: 'false'
+    # required: false
+    suffix: 'true'
+
+    # Interval in milliseconds between each check of dependencies completion
+    # default: '2000'
+    # required: false
+    interval: '2500'
+
+    # Maximum number of minutes to wait before giving up, step will fail with message providing remaining job names. Can't be more than 15
+    # default: '5'
+    # required: false
+    ttl: '10'
+```
+
+### Output
+
+This action has output named `outputs` which is JSON string generated by parsing provided JSON artifacts from (jobs in) this build. Make sure output file names and output names are unique for each job to avoid overwritting outputs
+
+```yaml
+- id: wait-for-jobs
+  uses: yogeshlonkar/wait-for-jobs@v0
+  with:
+    gh-token: ${{ secrets.GITHUB_TOKEN }}
+    jobs: |
+      job1
+      Job two
+      Job 3
+    outputs-from: output1.json,output2.json
+- run: |
+    echo ${{ fromJSON(steps.wait-for-jobs.outputs.outputs).out1 }}
+    echo ${{ fromJSON(steps.wait-for-jobs.outputs.outputs).out2 }}
+```
+
+### ⚠️ Billing duration
+
+Waiting for jobs in a step/ action will increase Run time, Billable time. The purpose of this action is to reduce Duration of workflow by prestarting dependee jobs.
+If the ttl is set more than 15 it will be overriden to 15 minutes. If depdencies requires more than 15 minutes to finish perhaps the dependee job steps should be split in separate jobs not prestart together
+
+
+[jobs-for-a-workflow-run-attempt]: https://docs.github.com/en/rest/actions/workflow-jobs#list-jobs-for-a-workflow-run-attempt
+[with-wait-for-jobs-run]: https://github.com/yogeshlonkar/wait-for-jobs/actions/runs/3077494840
+[without-wait-for-jobs-run]: https://github.com/yogeshlonkar/wait-for-jobs/actions/runs/3077494839

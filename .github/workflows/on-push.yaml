@@ -1,0 +1,69 @@
+name: Build & Tests
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: 'npm'
+      - run: |
+          npm install
+      - run: |
+          npm run all
+  job1:
+    name: Job 1
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      out1: ${{ steps.s1.outputs.out1 }}
+    steps:
+      - id: s1
+        run: echo "::set-output name=out1::test-1"
+  job2:
+    name: Job 2
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      out2: ${{ steps.s2.outputs.out2 }}
+    steps:
+      - run: sleep 60
+      - id: s2
+        run: echo "::set-output name=out2::test-2"
+      - run: |
+          echo '{"out2":"test-2"}' > output2.json
+      - uses: actions/upload-artifact@v3
+        with:
+          name: output2.json
+          path: output2.json
+          retention-days: 1
+  test:
+    name: Test
+    needs: job1
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Some step that can run without job 2:: ${{ needs.job1.outputs.out1 }}"
+      - uses: actions/checkout@v3
+      - id: wait-for-jobs
+        uses: ./
+        with:
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
+          jobs: Job 2
+          outputs-from: output2.json
+      - run: |
+          echo "Some step that needs job 2:: ${{ fromJSON(steps.wait-for-jobs.outputs.outputs).out2 }}"
