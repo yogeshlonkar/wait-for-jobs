@@ -9,7 +9,7 @@ jobs:
   tag-major:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check and create major tag
         run: |
           semver="v[[:digit:]]+[.][[:digit:]]"
