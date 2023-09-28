@@ -32,9 +32,6 @@ permissions:
 ```yaml
 - uses: yogeshlonkar/wait-for-jobs@v0
   with:
-    # GitHub token to access actions API
-    # required: true
-    gh-token: ${{ secrets.GITHUB_TOKEN }}
 
     # To ignore jobs that are skipped from given list of job dependencies
     # default: 'false'

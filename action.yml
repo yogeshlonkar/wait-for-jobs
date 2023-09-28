@@ -9,6 +9,7 @@ branding:
 inputs:
   gh-token:
     description: GitHub token to access API
+    default: '${{github.token}}'
     required: true
   ignore-skipped:
     description: To ignore jobs that are skipped from given list of job dependencies
