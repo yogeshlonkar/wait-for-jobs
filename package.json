@@ -5,7 +5,7 @@
   "description": "Wait for the specified jobs in the same run to complete successfully before proceeding",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -rf dist bin && ncc build --source-map --license licenses.txt -o dist src/index.ts",
+    "build": "ncc build --source-map --license licenses.txt -o dist src/index.ts",
     "format": "prettier --write '**/*.ts'",
     "format-check": "prettier --check '**/*.ts'",
     "lint": "eslint src/**/*.ts",

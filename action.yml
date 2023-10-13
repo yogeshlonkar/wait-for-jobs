@@ -21,8 +21,12 @@ inputs:
   outputs-from:
     description: Comma separated list of JSON artifacts from (jobs in) this build that will be parse to set as output for this step
     required: false
+  prefix:
+    description: Instead of exact job name match check prefix of job names, useful in case of reusable workflows
+    default: 'false'
+    required: false
   suffix:
-    description: Instead of exact job name match check suffix or job names, useful in case of reusable workflows
+    description: Instead of exact job name match check suffix of job names, useful in case of reusable workflows
     default: 'false'
     required: false
   interval:

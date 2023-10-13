@@ -30,7 +30,7 @@ beforeEach(() => {
     ]) {
         mock.asMock().mockReset();
     }
-    for (const input of ["some-gh-token", "build", "false", "false", "2000", "1"]) {
+    for (const input of ["some-gh-token", "build", "false", "false", "false", "2000", "1"]) {
         getInput.asMock().mockReturnValueOnce(input);
     }
     const miscellaneous = jest.requireActual("../lib/miscellaneous");
@@ -53,9 +53,19 @@ describe("wait-for-jobs", () => {
         expect(setFailed).not.toBeCalled();
     });
 
+    test("ends successfully on all job completion with prefix", async () => {
+        getInput.asMock().mockReset();
+        for (const input of ["some-gh-token", "bui", "true", "false", "false", "2000", "1"]) {
+            getInput.asMock().mockReturnValueOnce(input);
+        }
+        getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
+        await expect(new WaitForJobs().start()).resolves.toBeUndefined();
+        expect(setFailed).not.toBeCalled();
+    });
+
     test("ends successfully on all job completion with suffix", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "ild", "true", "false", "2000", "1"]) {
+        for (const input of ["some-gh-token", "ild", "false", "true", "false", "2000", "1"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
@@ -65,7 +75,7 @@ describe("wait-for-jobs", () => {
 
     test("wait for multiple jobs with same suffix", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "ild", "true", "false", "2000", "1"]) {
+        for (const input of ["some-gh-token", "ild",  "false", "true", "false", "2000", "1"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         getCurrentJobs.asMock().mockResolvedValueOnce(waitingJobs2);
@@ -167,7 +177,7 @@ describe("wait-for-jobs", () => {
 
     test("handle skipped conclusion with ignore-skipped", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "build", "false", "true", "2000", "1"]) {
+        for (const input of ["some-gh-token", "build", "false", "false", "true", "2000", "1"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         getCurrentJobs.asMock().mockResolvedValueOnce({
@@ -219,7 +229,7 @@ describe("wait-for-jobs", () => {
 
     test("handle ttl greater than 15 minutes", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "build", "false", "true", "2000", "16"]) {
+        for (const input of ["some-gh-token", "build", "false", "false", "true", "2000", "16"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
