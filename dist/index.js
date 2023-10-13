@@ -17873,6 +17873,7 @@ var INPUTS;
     INPUTS["IGNORE_SKIPPED"] = "ignore-skipped";
     INPUTS["INTERVAL"] = "interval";
     INPUTS["JOBS"] = "jobs";
+    INPUTS["PREFIX"] = "prefix";
     INPUTS["SUFFIX"] = "suffix";
     INPUTS["TTL"] = "ttl";
     INPUTS["OUTPUTS_FROM"] = "outputs-from";
@@ -17900,7 +17901,9 @@ class WaitForJobs {
          * @param jobs to search for dependency in
          */
         this.toCheck = (name, jobs) => {
-            const js = jobs.filter(job => (this.asSuffix && job.name.endsWith(name)) || job.name === name);
+            const js = jobs.filter(job => (this.asSuffix && job.name.endsWith(name)) ||
+                (this.asPrefix && job.name.startsWith(name)) ||
+                job.name === name);
             return new Dependency_1.Dependency(name, js, this.ignoreSkipped);
         };
         /**
@@ -17918,9 +17921,9 @@ class WaitForJobs {
          * Wait for jobs based on inputs
          */
         this.wait = () => __awaiter(this, void 0, void 0, function* () {
-            const { interval, token, withSuffix, taskCtrl, pending, summaries } = this;
+            const { interval, token, withPrefixOrSuffix: withPrefixOrSuffix, taskCtrl, pending, summaries } = this;
             const { setOutputs } = this;
-            (0, core_1.startGroup)(`checking status of jobs: ${pending} ${withSuffix}`);
+            (0, core_1.startGroup)(`checking status of jobs: ${pending} ${withPrefixOrSuffix}`);
             for (;;) {
                 const { total_count, jobs } = yield (0, github_1.getCurrentJobs)(token);
                 (0, core_1.debug)(`current run jobs: ${total_count}`);
@@ -18003,6 +18006,7 @@ class WaitForJobs {
         });
         this.token = (0, core_1.getInput)(INPUTS.GH_TOKEN, { required: true });
         this.jobNames = (0, miscellaneous_1.valuesFrom)((0, core_1.getInput)(INPUTS.JOBS, { required: true }));
+        this.asPrefix = (0, core_1.getInput)(INPUTS.PREFIX) === "true";
         this.asSuffix = (0, core_1.getInput)(INPUTS.SUFFIX) === "true";
         this.ignoreSkipped = (0, core_1.getInput)(INPUTS.IGNORE_SKIPPED) === "true";
         this.interval = parseInt((0, core_1.getInput)(INPUTS.INTERVAL), 10);
@@ -18022,8 +18026,10 @@ class WaitForJobs {
     get pending() {
         return `[${this.jobNames.join(", ")}]`;
     }
-    get withSuffix() {
-        return this.asSuffix ? "with suffix" : "";
+    get withPrefixOrSuffix() {
+        return this.asSuffix
+            ? "with suffix"
+            : (this.asPrefix ? "with prefix" : "");
     }
 }
 exports["default"] = WaitForJobs;

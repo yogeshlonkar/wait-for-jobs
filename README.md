@@ -46,7 +46,12 @@ permissions:
     # required: false
     outputs-from: 'job1_output.json,job2_output.json'
 
-    # Instead of exact job name match, check suffix or job names. Useful in case of reusable workflows
+    # Instead of exact job name match, check prefix of job names. Useful in case of reusable workflows
+    # default: 'false'
+    # required: false
+    prefix: 'false'
+
+    # Instead of exact job name match, check suffix of job names. Useful in case of reusable workflows
     # default: 'false'
     # required: false
     suffix: 'true'

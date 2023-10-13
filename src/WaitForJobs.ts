@@ -10,6 +10,7 @@ enum INPUTS {
     IGNORE_SKIPPED = "ignore-skipped",
     INTERVAL = "interval",
     JOBS = "jobs",
+    PREFIX = "prefix",
     SUFFIX = "suffix",
     TTL = "ttl",
     OUTPUTS_FROM = "outputs-from"
@@ -29,6 +30,7 @@ class Summary {
 }
 
 export default class WaitForJobs {
+    private readonly asPrefix: boolean;
     private readonly asSuffix: boolean;
     private readonly ignoreSkipped: boolean;
     private readonly interval: number;
@@ -44,6 +46,7 @@ export default class WaitForJobs {
     constructor() {
         this.token = getInput(INPUTS.GH_TOKEN, { required: true });
         this.jobNames = valuesFrom(getInput(INPUTS.JOBS, { required: true }));
+        this.asPrefix = getInput(INPUTS.PREFIX) === "true";
         this.asSuffix = getInput(INPUTS.SUFFIX) === "true";
         this.ignoreSkipped = getInput(INPUTS.IGNORE_SKIPPED) === "true";
         this.interval = parseInt(getInput(INPUTS.INTERVAL), 10);
@@ -67,8 +70,10 @@ export default class WaitForJobs {
         return `[${this.jobNames.join(", ")}]`;
     }
 
-    get withSuffix(): string {
-        return this.asSuffix ? "with suffix" : "";
+    get withPrefixOrSuffix(): string {
+        return this.asSuffix
+            ? "with suffix"
+            : (this.asPrefix ? "with prefix" : "");
     }
 
     /**
@@ -78,7 +83,9 @@ export default class WaitForJobs {
      * @param jobs to search for dependency in
      */
     private toCheck = (name: string, jobs: Job[]): Dependency => {
-        const js = jobs.filter(job => (this.asSuffix && job.name.endsWith(name)) || job.name === name);
+        const js = jobs.filter(job => (this.asSuffix && job.name.endsWith(name)) ||
+                                      (this.asPrefix && job.name.startsWith(name)) ||
+                                       job.name === name);
         return new Dependency(name, js, this.ignoreSkipped);
     };
 
@@ -98,9 +105,9 @@ export default class WaitForJobs {
      * Wait for jobs based on inputs
      */
     private wait = async () => {
-        const { interval, token, withSuffix, taskCtrl, pending, summaries } = this;
+        const { interval, token, withPrefixOrSuffix: withPrefixOrSuffix, taskCtrl, pending, summaries } = this;
         const { setOutputs } = this;
-        startGroup(`checking status of jobs: ${pending} ${withSuffix}`);
+        startGroup(`checking status of jobs: ${pending} ${withPrefixOrSuffix}`);
         for (;;) {
             const { total_count, jobs } = await getCurrentJobs(token);
             debug(`current run jobs: ${total_count}`);
