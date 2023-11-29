@@ -75,7 +75,7 @@ describe("wait-for-jobs", () => {
 
     test("wait for multiple jobs with same suffix", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "ild",  "false", "true", "false", "2000", "1"]) {
+        for (const input of ["some-gh-token", "ild", "false", "true", "false", "2000", "1"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         getCurrentJobs.asMock().mockResolvedValueOnce(waitingJobs2);

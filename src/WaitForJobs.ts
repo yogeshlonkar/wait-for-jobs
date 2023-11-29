@@ -71,9 +71,7 @@ export default class WaitForJobs {
     }
 
     get withPrefixOrSuffix(): string {
-        return this.asSuffix
-            ? "with suffix"
-            : (this.asPrefix ? "with prefix" : "");
+        return this.asSuffix ? "with suffix" : this.asPrefix ? "with prefix" : "";
     }
 
     /**
@@ -83,9 +81,12 @@ export default class WaitForJobs {
      * @param jobs to search for dependency in
      */
     private toCheck = (name: string, jobs: Job[]): Dependency => {
-        const js = jobs.filter(job => (this.asSuffix && job.name.endsWith(name)) ||
-                                      (this.asPrefix && job.name.startsWith(name)) ||
-                                       job.name === name);
+        const js = jobs.filter(
+            job =>
+                (this.asSuffix && job.name.endsWith(name)) ||
+                (this.asPrefix && job.name.startsWith(name)) ||
+                job.name === name
+        );
         return new Dependency(name, js, this.ignoreSkipped);
     };
 
