@@ -37170,9 +37170,7 @@ class WaitForJobs {
         return `[${this.jobNames.join(", ")}]`;
     }
     get withPrefixOrSuffix() {
-        return this.asSuffix
-            ? "with suffix"
-            : (this.asPrefix ? "with prefix" : "");
+        return this.asSuffix ? "with suffix" : this.asPrefix ? "with prefix" : "";
     }
 }
 exports["default"] = WaitForJobs;
