@@ -43,5 +43,5 @@ outputs:
     description: Outputs from given list of JSON artifacts
 
 runs:
-  using: node16
+  using: node20
   main: dist/index.js
