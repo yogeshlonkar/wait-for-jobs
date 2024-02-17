@@ -1,0 +1,44 @@
+{
+    "configurations": [
+        {
+          "name": "test:debug",
+          "console": "integratedTerminal",
+          "cwd": "${workspaceRoot}",
+          "internalConsoleOptions": "neverOpen",
+          "request": "launch",
+          "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/jest",
+          "sourceMaps": true,
+          "type": "node",
+          "args": [
+              "--coverage",
+              "--runInBand",
+              "--watchAll=false"
+          ],
+        },
+        {
+          "name": "vscode-jest-tests.v2",
+          "console": "integratedTerminal",
+          "cwd": "${workspaceRoot}",
+          "internalConsoleOptions": "neverOpen",
+          "request": "launch",
+          "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/jest",
+          "runtimeArgs": [
+            "--config",
+            "${workspaceRoot}/jest.config.js",
+          ],
+          "sourceMaps": true,
+          "type": "node",
+          "args": [
+              "--coverage",
+              "false",
+              "--runInBand",
+              "--watch",
+              "false",
+              "--testNamePattern",
+              "${jest.testNamePattern}",
+              "--runTestsByPath",
+              "${jest.testFile}"
+          ],
+      }
+      ]
+}

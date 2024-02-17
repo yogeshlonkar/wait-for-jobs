@@ -41,7 +41,7 @@ jobs:
         run: echo "::set-output name=out3::test-3"
       - run: |
           echo '{"out3":"test-3"}' > output3.json
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: output3.json
           path: output3.json
