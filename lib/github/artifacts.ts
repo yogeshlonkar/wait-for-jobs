@@ -1,8 +1,8 @@
-import { create } from "@actions/artifact";
+import artifactClient, { GetArtifactResponse, DownloadArtifactResponse } from "@actions/artifact";
 import { debug } from "@actions/core";
 import fs from "fs";
-import { resolve } from "path";
 import { promisify } from "util";
+import { resolve } from "path";
 
 import { Context } from "./context";
 
@@ -14,15 +14,14 @@ import { Context } from "./context";
  */
 export async function getOutput(artifactName: string): Promise<Record<string, unknown>> {
     const { tempDir } = new Context();
-    const resolvedPath = resolve(tempDir);
-    debug(`Storing output in ${resolvedPath}`);
-    const artifactClient = create();
-    // download outputs.json artifact
-    const downloadOptions = { createArtifactFolder: false };
     debug(`Downloading download ${artifactName}`);
-    const downloadResponse = await artifactClient.downloadArtifact(artifactName, resolvedPath, downloadOptions);
-    debug(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
+    const { artifact }: GetArtifactResponse = await artifactClient.getArtifact(artifactName);
+    const { downloadPath }: DownloadArtifactResponse = await artifactClient.downloadArtifact(artifact.id);
+    if (!downloadPath) {
+        throw new Error(`Failed to download artifact ${artifactName}`);
+    }
+    debug(`Artifact ${artifactName} was downloaded to ${downloadPath}`);
     const readFile = promisify(fs.readFile);
-    const data = await readFile(resolve(downloadResponse.downloadPath, artifactName));
+    const data = await readFile(resolve(downloadPath, artifactName));
     return JSON.parse(data.toString());
 }
