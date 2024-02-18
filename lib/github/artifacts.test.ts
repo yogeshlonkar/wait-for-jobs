@@ -39,13 +39,13 @@ describe("getOutput", () => {
 
     test("returns output for job", async () => {
         artifactClient.downloadArtifact.asMock().mockResolvedValueOnce({
-            downloadPath: resolve("some/some-output.json")
+            downloadPath: resolve("some")
         });
         await expect(getOutput(artifactName)).resolves.toEqual({
             result: "success",
             abc: "xyz"
         });
-        const expected = resolve("some/some-output.json");
+        const expected = resolve("some", "some-output.json");
         expect(readFile).toHaveBeenCalledWith(expected);
     });
 

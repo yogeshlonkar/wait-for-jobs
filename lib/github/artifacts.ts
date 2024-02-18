@@ -2,6 +2,7 @@ import artifactClient, { GetArtifactResponse, DownloadArtifactResponse } from "@
 import { debug } from "@actions/core";
 import fs from "fs";
 import { promisify } from "util";
+import { resolve } from "path";
 
 import { Context } from "./context";
 
@@ -21,6 +22,6 @@ export async function getOutput(artifactName: string): Promise<Record<string, un
     }
     debug(`Artifact ${artifactName} was downloaded to ${downloadPath}`);
     const readFile = promisify(fs.readFile);
-    const data = await readFile(downloadPath);
+    const data = await readFile(resolve(downloadPath, artifactName));
     return JSON.parse(data.toString());
 }
