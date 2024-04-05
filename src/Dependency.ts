@@ -39,6 +39,9 @@ export class Dependency {
             case "queued":
                 info(`job "${name}" not started yet 👀`);
                 return false;
+            case "pending":
+                info(`job "${name}" is pending 👀`);
+                return false;
             default:
                 // this should never happen
                 throw new Error(`error: unknown status "${status}" of job "${name}"`);
