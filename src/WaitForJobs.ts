@@ -13,6 +13,7 @@ enum INPUTS {
     PREFIX = "prefix",
     SUFFIX = "suffix",
     TTL = "ttl",
+    NO_MAX_TTL = "no-max-ttl",
     OUTPUTS_FROM = "outputs-from"
 }
 
@@ -42,6 +43,7 @@ export default class WaitForJobs {
     private readonly timeoutCtrl = new AbortController();
     private readonly token: string;
     private readonly ttl: number;
+    private readonly noMaxTtl: boolean;
 
     constructor() {
         this.token = getInput(INPUTS.GH_TOKEN, { required: true });
@@ -51,7 +53,8 @@ export default class WaitForJobs {
         this.ignoreSkipped = getInput(INPUTS.IGNORE_SKIPPED) === "true";
         this.interval = parseInt(getInput(INPUTS.INTERVAL), 10);
         this.ttl = parseInt(getInput(INPUTS.TTL), 10);
-        if (this.ttl > 15) {
+        this.noMaxTtl = getInput(INPUTS.NO_MAX_TTL) === "true";
+        if (this.ttl > 15 && !this.noMaxTtl) {
             warning(
                 "Overwriting ttl to 15 minutes. If depdencies requires more than 15 minutes to finish perhaps the dependee jobs should not prestart"
             );
