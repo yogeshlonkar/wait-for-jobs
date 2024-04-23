@@ -37,6 +37,10 @@ inputs:
     description: Maximum number of minutes to wait before giving up, step will fail with message providing remaining job names. Can't be more than 15
     default: '5'
     required: false
+  no-max-ttl:
+    description: If set to true, the ttl will NOT be overridden to 15 minutes if it is set more than 15 minutes
+    default: 'false'
+    required: false
 
 outputs:
   outputs:

@@ -30,7 +30,7 @@ beforeEach(() => {
     ]) {
         mock.asMock().mockReset();
     }
-    for (const input of ["some-gh-token", "build", "false", "false", "false", "2000", "1"]) {
+    for (const input of ["some-gh-token", "build", "false", "false", "false", "2000", "1", "false"]) {
         getInput.asMock().mockReturnValueOnce(input);
     }
     const miscellaneous = jest.requireActual("../lib/miscellaneous");
@@ -50,32 +50,32 @@ describe("wait-for-jobs", () => {
     test("ends successfully on all job completion", async () => {
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).not.toBeCalled();
+        expect(setFailed).not.toHaveBeenCalled();
     });
 
     test("ends successfully on all job completion with prefix", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "bui", "true", "false", "false", "2000", "1"]) {
+        for (const input of ["some-gh-token", "bui", "true", "false", "false", "2000", "1", "false"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).not.toBeCalled();
+        expect(setFailed).not.toHaveBeenCalled();
     });
 
     test("ends successfully on all job completion with suffix", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "ild", "false", "true", "false", "2000", "1"]) {
+        for (const input of ["some-gh-token", "ild", "false", "true", "false", "2000", "1", "false"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).not.toBeCalled();
+        expect(setFailed).not.toHaveBeenCalled();
     });
 
     test("wait for multiple jobs with same suffix", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "ild", "false", "true", "false", "2000", "1"]) {
+        for (const input of ["some-gh-token", "ild", "false", "true", "false", "2000", "1", "false"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         getCurrentJobs.asMock().mockResolvedValueOnce(waitingJobs2);
@@ -87,18 +87,18 @@ describe("wait-for-jobs", () => {
         });
         getCurrentJobs.asMock().mockResolvedValueOnce(nextResponse);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(getCurrentJobs).toBeCalledTimes(2);
-        expect(info).toBeCalledWith(`dependency: "ild", lastJob to finish: "Next to next build"`);
-        expect(setFailed).not.toBeCalled();
+        expect(getCurrentJobs).toHaveBeenCalledTimes(2);
+        expect(info).toHaveBeenCalledWith(`dependency: "ild", lastJob to finish: "Next to next build"`);
+        expect(setFailed).not.toHaveBeenCalled();
     });
 
     test("ends successfully after 2nd try", async () => {
         getCurrentJobs.asMock().mockResolvedValueOnce(waitingJobs);
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(getCurrentJobs).toBeCalledTimes(2);
-        expect(sleep).toBeCalledTimes(2);
-        expect(setFailed).not.toBeCalled();
+        expect(getCurrentJobs).toHaveBeenCalledTimes(2);
+        expect(sleep).toHaveBeenCalledTimes(2);
+        expect(setFailed).not.toHaveBeenCalled();
     });
 
     test("setFailed on error", async () => {
@@ -106,7 +106,7 @@ describe("wait-for-jobs", () => {
             throw new Error("unexpected status from api.github.com: 404");
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).toBeCalledWith("unexpected status from api.github.com: 404");
+        expect(setFailed).toHaveBeenCalledWith("unexpected status from api.github.com: 404");
     });
 
     test("setFailed on timeout", async () => {
@@ -122,8 +122,8 @@ describe("wait-for-jobs", () => {
             return miscellaneous.sleep(10 * 60 * 1000, controller);
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(sleep).toBeCalledWith(expect.anything(), expect.anything(), "wait-for-jobs");
-        expect(setFailed).toBeCalledWith("error: jobs [build] did not complete in 1 minutes");
+        expect(sleep).toHaveBeenCalledWith(expect.anything(), expect.anything(), "wait-for-jobs");
+        expect(setFailed).toHaveBeenCalledWith("error: jobs [build] did not complete in 1 minutes");
     });
 
     test("warning if no job found for dependency", async () => {
@@ -132,7 +132,7 @@ describe("wait-for-jobs", () => {
             jobs: []
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(warning).toBeCalledWith('⚠️ no job found for "build" in run');
+        expect(warning).toHaveBeenCalledWith('⚠️ no job found for "build" in run');
     });
 
     test("handle non error rejected promise", async () => {
@@ -140,7 +140,7 @@ describe("wait-for-jobs", () => {
             throw 404;
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).toBeCalledWith("404");
+        expect(setFailed).toHaveBeenCalledWith("404");
     });
 
     test("handle unknown status", async () => {
@@ -148,7 +148,7 @@ describe("wait-for-jobs", () => {
             jobs: [{ name: "build", status: "gollum" }]
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).toBeCalledWith('error: unknown status "gollum" of job "build"');
+        expect(setFailed).toHaveBeenCalledWith('error: unknown status "gollum" of job "build"');
     });
 
     test("handle unknown conclusion", async () => {
@@ -156,7 +156,7 @@ describe("wait-for-jobs", () => {
             jobs: [{ name: "build", status: "completed", conclusion: "gollum" }]
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).toBeCalledWith('error: unknown conclusion "gollum" of job "build"');
+        expect(setFailed).toHaveBeenCalledWith('error: unknown conclusion "gollum" of job "build"');
     });
 
     test("handle failure conclusion", async () => {
@@ -164,7 +164,7 @@ describe("wait-for-jobs", () => {
             jobs: [{ name: "build", status: "completed", conclusion: "failure" }]
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).toBeCalledWith('error: job "build" failed');
+        expect(setFailed).toHaveBeenCalledWith('error: job "build" failed');
     });
 
     test("handle skipped conclusion", async () => {
@@ -172,12 +172,12 @@ describe("wait-for-jobs", () => {
             jobs: [{ name: "build", status: "completed", conclusion: "skipped" }]
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).toBeCalledWith('error: job dependency "build" skipped but ignore-skipped not set');
+        expect(setFailed).toHaveBeenCalledWith('error: job dependency "build" skipped but ignore-skipped not set');
     });
 
     test("handle skipped conclusion with ignore-skipped", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "build", "false", "false", "true", "2000", "1"]) {
+        for (const input of ["some-gh-token", "build", "false", "false", "true", "2000", "1", "false"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         getCurrentJobs.asMock().mockResolvedValueOnce({
@@ -188,7 +188,7 @@ describe("wait-for-jobs", () => {
             jobs: [{ name: "build", status: "completed", conclusion: "success" }]
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(info).toBeCalledWith('ignoring skipped job "build" 😒');
+        expect(info).toHaveBeenCalledWith('ignoring skipped job "build" 😒');
     });
 
     test("handle cancelled conclusion", async () => {
@@ -196,7 +196,7 @@ describe("wait-for-jobs", () => {
             jobs: [{ name: "build", status: "completed", conclusion: "cancelled" }]
         });
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).toBeCalledWith('error: job dependency "build" got cancelled');
+        expect(setFailed).toHaveBeenCalledWith('error: job dependency "build" got cancelled');
     });
 
     test("handle jobs with outputs", async () => {
@@ -204,7 +204,7 @@ describe("wait-for-jobs", () => {
         getOutput.asMock().mockResolvedValueOnce({ out1: "some-value", out2: { some: "some-value2" } });
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setOutput).toBeCalledWith("outputs", `{"out1":"some-value","out2":{"some":"some-value2"}}`);
+        expect(setOutput).toHaveBeenCalledWith("outputs", `{"out1":"some-value","out2":{"some":"some-value2"}}`);
     });
 
     test("warn on multiple outputs with same key", async () => {
@@ -213,8 +213,8 @@ describe("wait-for-jobs", () => {
         getOutput.asMock().mockResolvedValueOnce({ out1: "other-value" });
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(warning).toBeCalledWith("overwriting previously set outputs.out1 with output from output2.json");
-        expect(setOutput).toBeCalledWith("outputs", `{"out1":"other-value","out2":{"some":"some-value2"}}`);
+        expect(warning).toHaveBeenCalledWith("overwriting previously set outputs.out1 with output from output2.json");
+        expect(setOutput).toHaveBeenCalledWith("outputs", `{"out1":"other-value","out2":{"some":"some-value2"}}`);
     });
 
     test("handle error fetching job output", async () => {
@@ -224,18 +224,27 @@ describe("wait-for-jobs", () => {
         });
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(setFailed).toBeCalledWith("error fetching job output");
+        expect(setFailed).toHaveBeenCalledWith("error fetching job output");
     });
 
     test("handle ttl greater than 15 minutes", async () => {
         getInput.asMock().mockReset();
-        for (const input of ["some-gh-token", "build", "false", "false", "true", "2000", "16"]) {
+        for (const input of ["some-gh-token", "build", "false", "false", "true", "2000", "16", "false"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
-        expect(sleep).toBeCalledWith(15 * 60 * 1000, expect.anything(), "action-timeout");
-        expect(warning).toBeCalledWith(
+        expect(sleep).toHaveBeenCalledWith(15 * 60 * 1000, expect.anything(), "action-timeout");
+        expect(warning).toHaveBeenCalledWith(
             "Overwriting ttl to 15 minutes. If depdencies requires more than 15 minutes to finish perhaps the dependee jobs should not prestart"
         );
+    });
+
+    test("handle ttl greater than 15 minutes and no-max-ttl", async () => {
+        getInput.asMock().mockReset();
+        for (const input of ["some-gh-token", "build", "false", "false", "true", "2000", "16", "true"]) {
+            getInput.asMock().mockReturnValueOnce(input);
+        }
+        await expect(new WaitForJobs().start()).resolves.toBeUndefined();
+        expect(sleep).toHaveBeenCalledWith(16 * 60 * 1000, expect.anything(), "action-timeout");
     });
 });
