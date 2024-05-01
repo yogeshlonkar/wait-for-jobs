@@ -6,11 +6,14 @@ import { getCurrentJobs } from "./jobs";
 const listJobsForWorkflowRunAttempt = jest.fn();
 
 jest.mock("@octokit/rest", () => ({
-    Octokit: jest.fn().mockImplementation(() => ({
-        actions: {
-            listJobsForWorkflowRunAttempt
-        }
-    }))
+    Octokit: {
+        plugin: () =>
+            jest.fn().mockImplementation(() => ({
+                actions: {
+                    listJobsForWorkflowRunAttempt
+                }
+            }))
+    }
 }));
 
 beforeEach(() => {

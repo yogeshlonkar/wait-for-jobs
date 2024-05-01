@@ -2,17 +2,13 @@
   "total_count": 1,
   "jobs": [
     {
-      "status": "in_progress",
+      "status": "waiting",
       "name": "build",
       "steps": [
         {
           "name": "Set up job",
           "status": "completed",
           "conclusion": "success"
-        },
-        {
-          "name": "Run actions/checkout@v2",
-          "status": "in_progress"
         }
       ]
     }

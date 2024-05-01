@@ -37,7 +37,12 @@ export class Dependency {
                 info(`job "${name}" in progress ⌛ current step "${stepName}"`);
                 return false;
             case "queued":
+            case "requested":
                 info(`job "${name}" not started yet 👀`);
+                return false;
+            case "waiting":
+            case "pending":
+                info(`job "${name}" waiting for resources 🤔`);
                 return false;
             default:
                 // this should never happen
