@@ -1,8 +1,11 @@
 import { debug } from "@actions/core";
 import { components } from "@octokit/openapi-types/types.d";
 import { Octokit } from "@octokit/rest";
+import { retry } from "@octokit/plugin-retry";
 
 import { Context } from "./context";
+
+const MyOctokit = Octokit.plugin(retry);
 
 /**
  * Jobs of perceptual run
@@ -30,7 +33,7 @@ export async function getCurrentJobs(token: string): Promise<Jobs> {
     // prettier-ignore
     const { runId: run_id, runAttempt: attempt_number, repo: { owner, repo } } = new Context();
     // prettier-ignore
-    const { actions: { listJobsForWorkflowRunAttempt } } = new Octokit({ auth: token });
+    const { actions: { listJobsForWorkflowRunAttempt } } = new MyOctokit({ auth: token });
     debug(`fetching jobs for /repos/${owner}/${repo}/actions/runs/${run_id}/attempts/${attempt_number}/jobs`);
     const { status, data } = await listJobsForWorkflowRunAttempt({
         attempt_number,

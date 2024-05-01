@@ -4,9 +4,11 @@ import { debug, endGroup, getInput, info, setFailed, setOutput, startGroup, warn
 
 import { getCurrentJobs, getOutput, Job } from "../lib/github";
 import { duration, sleep, valuesFrom } from "../lib/miscellaneous";
+import inProgressJobs from "./__fixtures__/in_progress-jobs.json";
+import inProgressJobs2 from "./__fixtures__/in_progress-jobs-2.json";
+import pendingJobs from "./__fixtures__/pending-jobs.json";
 import successfulJobs from "./__fixtures__/successful-jobs.json";
 import waitingJobs from "./__fixtures__/waiting-jobs.json";
-import waitingJobs2 from "./__fixtures__/waiting-jobs-2.json";
 import WaitForJobs from "./WaitForJobs";
 
 jest.mock("@actions/core");
@@ -34,7 +36,7 @@ beforeEach(() => {
         getInput.asMock().mockReturnValueOnce(input);
     }
     const miscellaneous = jest.requireActual("../lib/miscellaneous");
-    sleep.asMock().mockImplementation((time: number, controller: AbortController, label?: string) => {
+    sleep.asMock().mockImplementation((_: number, controller: AbortController, label?: string) => {
         if (label === "action-timeout") {
             // don't time out from test
             return miscellaneous.sleep(10 * 60 * 1000, controller);
@@ -78,8 +80,8 @@ describe("wait-for-jobs", () => {
         for (const input of ["some-gh-token", "ild", "false", "true", "false", "2000", "1", "false"]) {
             getInput.asMock().mockReturnValueOnce(input);
         }
-        getCurrentJobs.asMock().mockResolvedValueOnce(waitingJobs2);
-        const nextResponse = JSON.parse(JSON.stringify(waitingJobs2));
+        getCurrentJobs.asMock().mockResolvedValueOnce(inProgressJobs2);
+        const nextResponse = JSON.parse(JSON.stringify(inProgressJobs2));
         nextResponse.jobs = nextResponse.jobs.map((job: Job) => {
             job.status = "completed";
             job.conclusion = "success";
@@ -93,7 +95,25 @@ describe("wait-for-jobs", () => {
     });
 
     test("ends successfully after 2nd try", async () => {
+        getCurrentJobs.asMock().mockResolvedValueOnce(inProgressJobs);
+        getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
+        await expect(new WaitForJobs().start()).resolves.toBeUndefined();
+        expect(getCurrentJobs).toHaveBeenCalledTimes(2);
+        expect(sleep).toHaveBeenCalledTimes(2);
+        expect(setFailed).not.toHaveBeenCalled();
+    });
+
+    test("wait for waiting jobs", async () => {
         getCurrentJobs.asMock().mockResolvedValueOnce(waitingJobs);
+        getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
+        await expect(new WaitForJobs().start()).resolves.toBeUndefined();
+        expect(getCurrentJobs).toHaveBeenCalledTimes(2);
+        expect(sleep).toHaveBeenCalledTimes(2);
+        expect(setFailed).not.toHaveBeenCalled();
+    });
+
+    test("wait for pending jobs", async () => {
+        getCurrentJobs.asMock().mockResolvedValueOnce(pendingJobs);
         getCurrentJobs.asMock().mockResolvedValueOnce(successfulJobs);
         await expect(new WaitForJobs().start()).resolves.toBeUndefined();
         expect(getCurrentJobs).toHaveBeenCalledTimes(2);
@@ -110,9 +130,9 @@ describe("wait-for-jobs", () => {
     });
 
     test("setFailed on timeout", async () => {
-        getCurrentJobs.asMock().mockResolvedValueOnce(waitingJobs);
+        getCurrentJobs.asMock().mockResolvedValueOnce(inProgressJobs);
         sleep.asMock().mockReset();
-        sleep.asMock().mockImplementation((time: number, controller: AbortController, label?: string) => {
+        sleep.asMock().mockImplementation((_: number, controller: AbortController, label?: string) => {
             const miscellaneous = jest.requireActual("../lib/miscellaneous");
             if (label === "action-timeout") {
                 // time out from test
