@@ -4,6 +4,7 @@ import jobsResponse from "./__fixtures__/jobs.json";
 import { getCurrentJobs } from "./jobs";
 
 const listJobsForWorkflowRunAttempt = jest.fn();
+const octokit = jest.fn();
 
 jest.mock("@octokit/rest", () => ({
     Octokit: {
@@ -21,6 +22,7 @@ beforeEach(() => {
     process.env.GITHUB_REPOSITORY = "yogeshlonkar/wait-for-job";
     process.env.GITHUB_RUN_ID = "10";
     process.env.GITHUB_RUN_ATTEMPT = "1";
+    process.env.GITHUB_API_URL = "https://api.github.com";
 });
 
 afterEach(() => {
@@ -42,11 +44,19 @@ describe("getCurrentJobs", () => {
     test("returns Run", async () => {
         listJobsForWorkflowRunAttempt.mockResolvedValue(jobsResponse);
         await expect(getCurrentJobs("some-auth")).resolves.toEqual(jobsResponse.data);
-        expect(listJobsForWorkflowRunAttempt).toBeCalledWith({
+        expect(listJobsForWorkflowRunAttempt).toHaveBeenCalledWith({
             attempt_number: 1,
             owner: "yogeshlonkar",
             repo: "wait-for-job",
             run_id: 10
+        });
+    });
+
+    test("uses Octokit with token and baseUrl", async () => {
+        getCurrentJobs("some-auth-2");
+        expect(octokit).not.toHaveBeenCalledWith({
+            auth: "some-auth-2",
+            baseUrl: "https://api.github.com"
         });
     });
 });

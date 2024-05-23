@@ -31,9 +31,9 @@ export type Job = components["schemas"]["job"];
  */
 export async function getCurrentJobs(token: string): Promise<Jobs> {
     // prettier-ignore
-    const { runId: run_id, runAttempt: attempt_number, repo: { owner, repo } } = new Context();
+    const { runId: run_id, runAttempt: attempt_number, repo: { owner, repo }, apiUrl } = new Context();
     // prettier-ignore
-    const { actions: { listJobsForWorkflowRunAttempt } } = new MyOctokit({ auth: token });
+    const { actions: { listJobsForWorkflowRunAttempt } } = new MyOctokit({ auth: token, baseUrl: apiUrl });
     debug(`fetching jobs for /repos/${owner}/${repo}/actions/runs/${run_id}/attempts/${attempt_number}/jobs`);
     const { status, data } = await listJobsForWorkflowRunAttempt({
         attempt_number,
