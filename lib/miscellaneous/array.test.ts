@@ -1,4 +1,6 @@
-import "./array";
+import { describe, expect, test } from "vitest";
+
+import "./array.js";
 
 describe("Array<T>", () => {
     test("remove returns removed element", () => {

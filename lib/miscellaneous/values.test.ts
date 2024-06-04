@@ -1,4 +1,6 @@
-import { valuesFrom } from "./values";
+import { describe, expect, test } from "vitest";
+
+import { valuesFrom } from "./values.js";
 
 describe("valuesFrom", () => {
     test("returns Array<string> on newline delimited input", () => {

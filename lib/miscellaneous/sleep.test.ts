@@ -1,8 +1,10 @@
+import { expect, test, vi } from "vitest";
+
 import { debug } from "@actions/core";
 
-import { sleep } from "./sleep";
+import { sleep } from "./sleep.js";
 
-jest.mock("@actions/core");
+vi.mock("@actions/core");
 
 test("sleep debug logs label", async () => {
     const controller = new AbortController();

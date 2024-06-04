@@ -1,34 +1,41 @@
-import "../../test.globals";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import artifactClient, { GetArtifactResponse, DownloadArtifactResponse } from "@actions/artifact";
 import { debug, info } from "@actions/core";
 import { resolve } from "path";
 import { promisify } from "util";
 
-import { getOutput } from "./artifacts";
+import { getOutput } from "./artifacts.js";
 
-jest.mock("@actions/artifact");
-jest.mock("@actions/core");
-jest.mock("util");
+const artifactClient = vi.hoisted(() => {
+    return {
+        getArtifact: vi.fn(),
+        downloadArtifact: vi.fn()
+    };
+});
+vi.mock("@actions/artifact", () => ({
+    DefaultArtifactClient: vi.fn().mockImplementation(() => artifactClient)
+}));
+vi.mock("@actions/core");
+vi.mock("util");
 
 describe("getOutput", () => {
     const artifactName = "some-output.json";
-    const readFile = jest.fn();
+    const readFile = vi.fn();
 
     beforeEach(() => {
         process.env.RUNNER_TEMP = "random-dir";
         process.env.GITHUB_RUN_ID = "10";
         process.env.GITHUB_RUN_ATTEMPT = "1";
-        artifactClient.getArtifact.asMock().mockResolvedValueOnce({
+        artifactClient.getArtifact.mockResolvedValueOnce({
             artifact: {
                 id: 123
             }
         });
         readFile.mockReset();
-        promisify.asMock().mockReset();
-        debug.asMock().mockReset();
-        info.asMock().mockReset();
-        promisify.asMock().mockReturnValueOnce(readFile);
+        promisify.mockReset();
+        debug.mockReset();
+        info.mockReset();
+        promisify.mockReturnValueOnce(readFile);
         readFile.mockResolvedValueOnce(
             JSON.stringify({
                 result: "success",
@@ -38,7 +45,7 @@ describe("getOutput", () => {
     });
 
     test("returns output for job", async () => {
-        artifactClient.downloadArtifact.asMock().mockResolvedValueOnce({
+        artifactClient.downloadArtifact.mockResolvedValueOnce({
             downloadPath: resolve("some")
         });
         await expect(getOutput(artifactName)).resolves.toEqual({
@@ -50,7 +57,7 @@ describe("getOutput", () => {
     });
 
     test("throws error if no artifact to download", async () => {
-        artifactClient.downloadArtifact.asMock().mockResolvedValueOnce({});
+        artifactClient.downloadArtifact.mockResolvedValueOnce({});
         await expect(getOutput(artifactName)).rejects.toEqual(new Error(`Failed to download artifact ${artifactName}`));
         expect(readFile).not.toHaveBeenCalledWith();
     });
