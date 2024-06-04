@@ -1,4 +1,4 @@
-import { Context as GhContext } from "@actions/github/lib/context";
+import { Context as GhContext } from "@actions/github/lib/context.js";
 
 export class Context extends GhContext {
     runAttempt: number;

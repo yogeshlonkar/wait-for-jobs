@@ -1,11 +1,11 @@
 import { debug } from "@actions/core";
-import { components } from "@octokit/openapi-types/types.d";
+import { components } from "@octokit/openapi-types";
 import { Octokit } from "@octokit/rest";
 import { retry } from "@octokit/plugin-retry";
 
-import { Context } from "./context";
+import { Context } from "./context.js";
 
-const MyOctokit = Octokit.plugin(retry);
+const MyOctokit = Octokit.plugin(retry as any);
 
 /**
  * Jobs of perceptual run

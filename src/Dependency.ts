@@ -1,6 +1,6 @@
 import { info } from "@actions/core";
 
-import { Job } from "../lib/github";
+import { Job } from "../lib/github/index.js";
 
 export class Dependency {
     readonly name: string;

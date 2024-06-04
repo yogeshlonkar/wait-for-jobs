@@ -1,4 +1,6 @@
-import { compareDates } from "./dates";
+import { describe, expect, test } from "vitest";
+
+import { compareDates } from "./dates.js";
 
 describe("compareDates", () => {
     test("returns negative value with ascending order", () => {

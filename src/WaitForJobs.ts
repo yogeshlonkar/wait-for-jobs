@@ -1,9 +1,9 @@
 import { debug, endGroup, getInput, info, setFailed, setOutput, startGroup, warning } from "@actions/core";
 
-import { getCurrentJobs, getOutput, Job } from "../lib/github";
-import { duration, sleep, valuesFrom } from "../lib/miscellaneous";
-import { compareDates } from "../lib/miscellaneous/dates";
-import { Dependency } from "./Dependency";
+import { getCurrentJobs, getOutput, Job } from "../lib/github/index.js";
+import { compareDates } from "../lib/miscellaneous/dates.js";
+import { duration, sleep, valuesFrom } from "../lib/miscellaneous/index.js";
+import { Dependency } from "./Dependency.js";
 
 enum INPUTS {
     GH_TOKEN = "gh-token",

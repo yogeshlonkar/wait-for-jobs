@@ -1,4 +1,6 @@
-import { duration } from "./duration";
+import { describe, expect, test } from "vitest";
+
+import { duration } from "./duration.js";
 
 describe("duration", () => {
     test("returns 1d2h3m4s", () => {

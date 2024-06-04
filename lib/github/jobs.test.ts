@@ -1,15 +1,16 @@
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@octokit/rest";
 
 import jobsResponse from "./__fixtures__/jobs.json";
-import { getCurrentJobs } from "./jobs";
+import { getCurrentJobs } from "./jobs.js";
 
-const listJobsForWorkflowRunAttempt = jest.fn();
-const octokit = jest.fn();
+const listJobsForWorkflowRunAttempt = vi.fn();
+const octokit = vi.fn();
 
-jest.mock("@octokit/rest", () => ({
+vi.mock("@octokit/rest", () => ({
     Octokit: {
         plugin: () =>
-            jest.fn().mockImplementation(() => ({
+            vi.fn().mockImplementation(() => ({
                 actions: {
                     listJobsForWorkflowRunAttempt
                 }
