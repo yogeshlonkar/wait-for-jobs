@@ -32,17 +32,16 @@ export type Job = components["schemas"]["job"];
 export async function getCurrentJobs(token: string): Promise<Jobs> {
     // prettier-ignore
     const { runId: run_id, runAttempt: attempt_number, repo: { owner, repo }, apiUrl } = new Context();
-    // prettier-ignore
-    const { actions: { listJobsForWorkflowRunAttempt } } = new MyOctokit({ auth: token, baseUrl: apiUrl });
+    const client = new MyOctokit({ auth: token, baseUrl: apiUrl });
     debug(`fetching jobs for /repos/${owner}/${repo}/actions/runs/${run_id}/attempts/${attempt_number}/jobs`);
-    const { status, data } = await listJobsForWorkflowRunAttempt({
+    const jobs = await client.paginate(client.actions.listJobsForWorkflowRunAttempt, {
         attempt_number,
         owner,
         repo,
         run_id
     });
-    if (status !== 200) {
-        throw new Error(`unexpected status from api.github.com: ${status}`);
-    }
-    return data;
+    return {
+        total_count: jobs.length,
+        jobs
+    };
 }
