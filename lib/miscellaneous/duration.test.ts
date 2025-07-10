@@ -27,4 +27,8 @@ describe("duration", () => {
         const actual = duration(new Date("2020-01-20T17:44:39Z"), new Date("2020-01-20T17:44:43Z"));
         expect(actual).toBe("4s");
     });
+    test("returns 0s", () => {
+        const actual = duration(new Date("2020-01-20T17:44:39Z"), new Date("2020-01-20T17:44:39Z"));
+        expect(actual).toBe("0s");
+    });
 });
