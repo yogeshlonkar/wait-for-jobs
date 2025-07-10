@@ -26,5 +26,8 @@ export const duration = (since: Date, now = new Date()): string => {
     if (minutes + hours + days > 0 || seconds !== "0") {
         dur += `${seconds}s`;
     }
+    if (dur === "") {
+        dur = `0s`;
+    }
     return dur;
 };
