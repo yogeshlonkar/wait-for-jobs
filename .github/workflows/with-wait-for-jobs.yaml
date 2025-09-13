@@ -54,7 +54,7 @@ jobs:
       - run: |
           echo "Some step that can run without job 3:: ${{ needs.job1.outputs.out1 }} :: ${{ needs.job2.outputs.out2 }}"
       - run: sleep 60
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: wait-for-jobs
         uses: ./
         with:

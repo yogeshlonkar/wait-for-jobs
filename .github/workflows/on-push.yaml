@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set Node.js 20.x
         uses: actions/setup-node@v4
         with:
@@ -58,7 +58,7 @@ jobs:
     steps:
       - run: |
           echo "Some step that can run without job 2:: ${{ needs.job1.outputs.out1 }}"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: wait-for-jobs
         uses: ./
         with:
