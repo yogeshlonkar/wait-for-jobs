@@ -36,27 +36,28 @@
     "@actions/artifact": "^2.3.2",
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.1",
-    "@octokit/core": "^7.0.2",
+    "@octokit/core": "^7.0.3",
     "@octokit/plugin-retry": "^8.0.1",
     "@octokit/rest": "^22.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2",
+    "@eslint/js": "^9.35.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@octokit/openapi-types": "^25.1.0",
-    "@types/node": "^24.1.0",
-    "@typescript-eslint/eslint-plugin": "^8.38.0",
-    "@typescript-eslint/parser": "^8.34.1",
+    "@types/node": "^24.3.3",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
     "@vercel/ncc": "^0.38.3",
     "@vitest/coverage-v8": "^3.2.4",
-    "eslint": "^9.32.0",
+    "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.3",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "js-yaml": "^4.1.0",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "vitest": "^3.2.3"
+    "vitest": "^3.2.4"
   }
 }
