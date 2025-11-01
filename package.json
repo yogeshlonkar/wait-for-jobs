@@ -33,17 +33,17 @@
     "node": "20"
   },
   "dependencies": {
-    "@actions/artifact": "^2.3.2",
+    "@actions/artifact": "^4.0.0",
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.1",
-    "@octokit/core": "^7.0.5",
-    "@octokit/plugin-retry": "^8.0.2",
+    "@octokit/core": "^7.0.6",
+    "@octokit/plugin-retry": "^8.0.3",
     "@octokit/rest": "^22.0.0",
     "typescript": "^5.9.3",
-    "@eslint/js": "^9.36.0"
+    "@eslint/js": "^9.39.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.36.0",
+    "@eslint/js": "^9.39.0",
     "@octokit/openapi-types": "^26.0.0",
     "@types/node": "^24.6.1",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
