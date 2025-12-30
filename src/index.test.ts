@@ -8,11 +8,13 @@ const { start } = vi.hoisted(() => {
     };
 });
 
-vi.mock("./WaitForJobs", () => ({
+vi.mock(import("./WaitForJobs"), () => ({
     __esModule: true,
-    default: vi.fn().mockImplementation(() => ({
-        start: start
-    }))
+    default: vi.fn().mockImplementation(function () {
+        return {
+            start: start
+        };
+    })
 }));
 
 describe("index.ts", () => {

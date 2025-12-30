@@ -12,8 +12,10 @@ const artifactClient = vi.hoisted(() => {
         downloadArtifact: vi.fn()
     };
 });
-vi.mock("@actions/artifact", () => ({
-    DefaultArtifactClient: vi.fn().mockImplementation(() => artifactClient)
+vi.mock(import("@actions/artifact"), () => ({
+    DefaultArtifactClient: vi.fn().mockImplementation(function () {
+        return artifactClient;
+    })
 }));
 vi.mock("@actions/core");
 vi.mock("util");

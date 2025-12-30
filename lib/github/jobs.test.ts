@@ -11,12 +11,14 @@ const octokit = vi.fn();
 vi.mock("@octokit/rest", () => ({
     Octokit: {
         plugin: () =>
-            vi.fn().mockImplementation(() => ({
-                paginate,
-                actions: {
-                    listJobsForWorkflowRunAttempt
-                }
-            }))
+            vi.fn().mockImplementation(function () {
+                return {
+                    paginate,
+                    actions: {
+                        listJobsForWorkflowRunAttempt
+                    }
+                };
+            })
     }
 }));
 

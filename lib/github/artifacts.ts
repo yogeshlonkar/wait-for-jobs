@@ -1,4 +1,5 @@
-import { DefaultArtifactClient, DownloadArtifactResponse, GetArtifactResponse } from "@actions/artifact";
+import type { DownloadArtifactResponse, GetArtifactResponse } from "@actions/artifact";
+import { DefaultArtifactClient } from "@actions/artifact";
 import { debug } from "@actions/core";
 import fs from "fs";
 import { promisify } from "util";
