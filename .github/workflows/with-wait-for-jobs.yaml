@@ -41,7 +41,7 @@ jobs:
         run: echo "out3=test-3" >> $GITHUB_OUTPUT
       - run: |
           echo '{"out3":"test-3"}' > output3.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: output3.json
           path: output3.json
