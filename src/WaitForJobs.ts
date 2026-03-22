@@ -195,7 +195,7 @@ export default class WaitForJobs {
             cleanup();
             summaries.forEach(summary => info(summary.toString()));
             info(`took ${duration(this.startedAt)}, all job dependencies completed with success 🎉`);
-        }
+        };
         await Promise.race([timeout(), wait()]).then(cleanupNSummaries, onRejected);
     };
 }
