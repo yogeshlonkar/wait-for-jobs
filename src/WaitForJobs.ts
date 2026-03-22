@@ -191,8 +191,11 @@ export default class WaitForJobs {
      */
     public start = async (): Promise<void> => {
         const { timeout, wait, cleanup, onRejected, summaries } = this;
-        await Promise.race([timeout(), wait()]).then(cleanup, onRejected);
-        summaries.forEach(summary => info(summary.toString()));
-        info(`took ${duration(this.startedAt)}, all job dependencies completed with success 🎉`);
+        const cleanupNSummaries = () => {
+            cleanup();
+            summaries.forEach(summary => info(summary.toString()));
+            info(`took ${duration(this.startedAt)}, all job dependencies completed with success 🎉`);
+        };
+        await Promise.race([timeout(), wait()]).then(cleanupNSummaries, onRejected);
     };
 }
