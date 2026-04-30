@@ -22,7 +22,7 @@ jobs:
           node-version: 24.x
           cache: 'npm'
       - run: |
-          npm install --legacy-peer-deps # TODO: remove after typescript-eslint upgrades to eslint 9
+          npm install
       - run: |
           npm run all
   job1:
