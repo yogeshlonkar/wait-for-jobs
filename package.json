@@ -30,7 +30,7 @@
   "author": "yogeshlonkar",
   "license": "MIT",
   "engines": {
-    "node": "20"
+    "node": "24"
   },
   "dependencies": {
     "@actions/artifact": "^6.2.1",
