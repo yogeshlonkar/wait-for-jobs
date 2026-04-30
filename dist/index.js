@@ -38535,7 +38535,6 @@ const b4a = __nccwpck_require__(3057)
 const headers = __nccwpck_require__(8428)
 
 const EMPTY = b4a.alloc(0)
-const MAX_HEADER_SIZE = 4 * 1024 * 1024 // arbitrary big number
 
 class BufferList {
   constructor () {
@@ -38552,7 +38551,7 @@ class BufferList {
   }
 
   shiftFirst (size) {
-    return this.buffered === 0 ? null : this._next(size)
+    return this._buffered === 0 ? null : this._next(size)
   }
 
   shift (size) {
@@ -38681,8 +38680,6 @@ class Extract extends Writable {
 
     if (!this._header) return true
 
-    this._header.byteOffset = this._buffer.shifted
-
     switch (this._header.type) {
       case 'gnu-long-path':
       case 'gnu-long-link-path':
@@ -38690,20 +38687,11 @@ class Extract extends Writable {
       case 'pax-header':
         this._longHeader = true
         this._missing = this._header.size
-        if (this._missing > MAX_HEADER_SIZE) {
-          this._continueWrite(new Error('Header exceeds max size'))
-          return false
-        }
         return true
     }
 
     this._locked = true
     this._applyLongHeaders()
-
-    if (!(this._header.size >= 0)) {
-      this._continueWrite(new Error('Invalid header'))
-      return false
-    }
 
     if (this._header.size === 0 || this._header.type === 'directory') {
       this.emit('entry', this._header, this._createStream(), this._unlockBound)
@@ -39093,7 +39081,6 @@ exports.decode = function decode (buf, filenameEncoding, allowUnknownFormat) {
     uid,
     gid,
     size,
-    byteOffset: 0,
     mtime: new Date(1000 * mtime),
     type,
     linkname,
@@ -44575,6 +44562,7 @@ function defaultFactory (origin, opts) {
 
 class Agent extends DispatcherBase {
   constructor ({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
+    super()
 
     if (typeof factory !== 'function') {
       throw new InvalidArgumentError('factory must be a function.')
@@ -44587,8 +44575,6 @@ class Agent extends DispatcherBase {
     if (!Number.isInteger(maxRedirections) || maxRedirections < 0) {
       throw new InvalidArgumentError('maxRedirections must be a positive number')
     }
-
-    super(options)
 
     if (connect && typeof connect !== 'function') {
       connect = { ...connect }
@@ -47138,10 +47124,9 @@ class Client extends DispatcherBase {
     autoSelectFamilyAttemptTimeout,
     // h2
     maxConcurrentStreams,
-    allowH2,
-    webSocket
+    allowH2
   } = {}) {
-    super({ webSocket })
+    super()
 
     if (keepAlive !== undefined) {
       throw new InvalidArgumentError('unsupported keepAlive, use pipelining=0 instead')
@@ -47673,23 +47658,15 @@ const { kDestroy, kClose, kClosed, kDestroyed, kDispatch, kInterceptors } = __nc
 const kOnDestroyed = Symbol('onDestroyed')
 const kOnClosed = Symbol('onClosed')
 const kInterceptedDispatch = Symbol('Intercepted Dispatch')
-const kWebSocketOptions = Symbol('webSocketOptions')
 
 class DispatcherBase extends Dispatcher {
-  constructor (opts) {
+  constructor () {
     super()
 
     this[kDestroyed] = false
     this[kOnDestroyed] = null
     this[kClosed] = false
     this[kOnClosed] = []
-    this[kWebSocketOptions] = opts?.webSocket ?? {}
-  }
-
-  get webSocketOptions () {
-    return {
-      maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
-    }
   }
 
   get destroyed () {
@@ -48249,8 +48226,8 @@ const kRemoveClient = Symbol('remove client')
 const kStats = Symbol('stats')
 
 class PoolBase extends DispatcherBase {
-  constructor (opts) {
-    super(opts)
+  constructor () {
+    super()
 
     this[kQueue] = new FixedQueue()
     this[kClients] = []
@@ -48509,6 +48486,8 @@ class Pool extends PoolBase {
     allowH2,
     ...options
   } = {}) {
+    super()
+
     if (connections != null && (!Number.isFinite(connections) || connections < 0)) {
       throw new InvalidArgumentError('invalid connections')
     }
@@ -48532,8 +48511,6 @@ class Pool extends PoolBase {
         ...connect
       })
     }
-
-    super(options)
 
     this[kInterceptors] = options.interceptors?.Pool && Array.isArray(options.interceptors.Pool)
       ? options.interceptors.Pool
@@ -66289,35 +66266,40 @@ const tail = Buffer.from([0x00, 0x00, 0xff, 0xff])
 const kBuffer = Symbol('kBuffer')
 const kLength = Symbol('kLength')
 
+// Default maximum decompressed message size: 4 MB
+const kDefaultMaxDecompressedSize = 4 * 1024 * 1024
+
 class PerMessageDeflate {
   /** @type {import('node:zlib').InflateRaw} */
   #inflate
 
   #options = {}
 
-  #maxPayloadSize = 0
+  /** @type {boolean} */
+  #aborted = false
+
+  /** @type {Function|null} */
+  #currentCallback = null
 
   /**
    * @param {Map<string, string>} extensions
    */
-  constructor (extensions, options) {
+  constructor (extensions) {
     this.#options.serverNoContextTakeover = extensions.has('server_no_context_takeover')
     this.#options.serverMaxWindowBits = extensions.get('server_max_window_bits')
-
-    this.#maxPayloadSize = options.maxPayloadSize
   }
 
-  /**
-   * Decompress a compressed payload.
-   * @param {Buffer} chunk Compressed data
-   * @param {boolean} fin Final fragment flag
-   * @param {Function} callback Callback function
-   */
   decompress (chunk, fin, callback) {
     // An endpoint uses the following algorithm to decompress a message.
     // 1.  Append 4 octets of 0x00 0x00 0xff 0xff to the tail end of the
     //     payload of the message.
     // 2.  Decompress the resulting data using DEFLATE.
+
+    if (this.#aborted) {
+      callback(new MessageSizeExceededError())
+      return
+    }
+
     if (!this.#inflate) {
       let windowBits = Z_DEFAULT_WINDOWBITS
 
@@ -66340,12 +66322,23 @@ class PerMessageDeflate {
       this.#inflate[kLength] = 0
 
       this.#inflate.on('data', (data) => {
+        if (this.#aborted) {
+          return
+        }
+
         this.#inflate[kLength] += data.length
 
-        if (this.#maxPayloadSize > 0 && this.#inflate[kLength] > this.#maxPayloadSize) {
-          callback(new MessageSizeExceededError())
+        if (this.#inflate[kLength] > kDefaultMaxDecompressedSize) {
+          this.#aborted = true
           this.#inflate.removeAllListeners()
+          this.#inflate.destroy()
           this.#inflate = null
+
+          if (this.#currentCallback) {
+            const cb = this.#currentCallback
+            this.#currentCallback = null
+            cb(new MessageSizeExceededError())
+          }
           return
         }
 
@@ -66358,13 +66351,14 @@ class PerMessageDeflate {
       })
     }
 
+    this.#currentCallback = callback
     this.#inflate.write(chunk)
     if (fin) {
       this.#inflate.write(tail)
     }
 
     this.#inflate.flush(() => {
-      if (!this.#inflate) {
+      if (this.#aborted || !this.#inflate) {
         return
       }
 
@@ -66372,6 +66366,7 @@ class PerMessageDeflate {
 
       this.#inflate[kBuffer].length = 0
       this.#inflate[kLength] = 0
+      this.#currentCallback = null
 
       callback(null, full)
     })
@@ -66406,7 +66401,6 @@ const {
 const { WebsocketFrameSend } = __nccwpck_require__(3264)
 const { closeWebSocketConnection } = __nccwpck_require__(6897)
 const { PerMessageDeflate } = __nccwpck_require__(9469)
-const { MessageSizeExceededError } = __nccwpck_require__(8707)
 
 // This code was influenced by ws released under the MIT license.
 // Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
@@ -66415,7 +66409,6 @@ const { MessageSizeExceededError } = __nccwpck_require__(8707)
 
 class ByteParser extends Writable {
   #buffers = []
-  #fragmentsBytes = 0
   #byteOffset = 0
   #loop = false
 
@@ -66427,23 +66420,18 @@ class ByteParser extends Writable {
   /** @type {Map<string, PerMessageDeflate>} */
   #extensions
 
-  /** @type {number} */
-  #maxPayloadSize
-
   /**
    * @param {import('./websocket').WebSocket} ws
    * @param {Map<string, string>|null} extensions
-   * @param {{ maxPayloadSize?: number }} [options]
    */
-  constructor (ws, extensions, options = {}) {
+  constructor (ws, extensions) {
     super()
 
     this.ws = ws
     this.#extensions = extensions == null ? new Map() : extensions
-    this.#maxPayloadSize = options.maxPayloadSize ?? 0
 
     if (this.#extensions.has('permessage-deflate')) {
-      this.#extensions.set('permessage-deflate', new PerMessageDeflate(extensions, options))
+      this.#extensions.set('permessage-deflate', new PerMessageDeflate(extensions))
     }
   }
 
@@ -66457,19 +66445,6 @@ class ByteParser extends Writable {
     this.#loop = true
 
     this.run(callback)
-  }
-
-  #validatePayloadLength () {
-    if (
-      this.#maxPayloadSize > 0 &&
-      !isControlFrame(this.#info.opcode) &&
-      this.#info.payloadLength > this.#maxPayloadSize
-    ) {
-      failWebsocketConnection(this.ws, 'Payload size exceeds maximum allowed size')
-      return false
-    }
-
-    return true
   }
 
   /**
@@ -66560,10 +66535,6 @@ class ByteParser extends Writable {
         if (payloadLength <= 125) {
           this.#info.payloadLength = payloadLength
           this.#state = parserStates.READ_DATA
-
-          if (!this.#validatePayloadLength()) {
-            return
-          }
         } else if (payloadLength === 126) {
           this.#state = parserStates.PAYLOADLENGTH_16
         } else if (payloadLength === 127) {
@@ -66588,10 +66559,6 @@ class ByteParser extends Writable {
 
         this.#info.payloadLength = buffer.readUInt16BE(0)
         this.#state = parserStates.READ_DATA
-
-        if (!this.#validatePayloadLength()) {
-          return
-        }
       } else if (this.#state === parserStates.PAYLOADLENGTH_64) {
         if (this.#byteOffset < 8) {
           return callback()
@@ -66614,10 +66581,6 @@ class ByteParser extends Writable {
 
         this.#info.payloadLength = lower
         this.#state = parserStates.READ_DATA
-
-        if (!this.#validatePayloadLength()) {
-          return
-        }
       } else if (this.#state === parserStates.READ_DATA) {
         if (this.#byteOffset < this.#info.payloadLength) {
           return callback()
@@ -66630,53 +66593,42 @@ class ByteParser extends Writable {
           this.#state = parserStates.INFO
         } else {
           if (!this.#info.compressed) {
-            this.writeFragments(body)
-
-            if (this.#maxPayloadSize > 0 && this.#fragmentsBytes > this.#maxPayloadSize) {
-              failWebsocketConnection(this.ws, new MessageSizeExceededError().message)
-              return
-            }
+            this.#fragments.push(body)
 
             // If the frame is not fragmented, a message has been received.
             // If the frame is fragmented, it will terminate with a fin bit set
             // and an opcode of 0 (continuation), therefore we handle that when
             // parsing continuation frames, not here.
             if (!this.#info.fragmented && this.#info.fin) {
-              websocketMessageReceived(this.ws, this.#info.binaryType, this.consumeFragments())
+              const fullMessage = Buffer.concat(this.#fragments)
+              websocketMessageReceived(this.ws, this.#info.binaryType, fullMessage)
+              this.#fragments.length = 0
             }
 
             this.#state = parserStates.INFO
           } else {
-            this.#extensions.get('permessage-deflate').decompress(
-              body,
-              this.#info.fin,
-              (error, data) => {
-                if (error) {
-                  failWebsocketConnection(this.ws, error.message)
-                  return
-                }
-
-                this.writeFragments(data)
-
-                if (this.#maxPayloadSize > 0 && this.#fragmentsBytes > this.#maxPayloadSize) {
-                  failWebsocketConnection(this.ws, new MessageSizeExceededError().message)
-                  return
-                }
-
-                if (!this.#info.fin) {
-                  this.#state = parserStates.INFO
-                  this.#loop = true
-                  this.run(callback)
-                  return
-                }
-
-                websocketMessageReceived(this.ws, this.#info.binaryType, this.consumeFragments())
-
-                this.#loop = true
-                this.#state = parserStates.INFO
-                this.run(callback)
+            this.#extensions.get('permessage-deflate').decompress(body, this.#info.fin, (error, data) => {
+              if (error) {
+                failWebsocketConnection(this.ws, error.message)
+                return
               }
-            )
+
+              this.#fragments.push(data)
+
+              if (!this.#info.fin) {
+                this.#state = parserStates.INFO
+                this.#loop = true
+                this.run(callback)
+                return
+              }
+
+              websocketMessageReceived(this.ws, this.#info.binaryType, Buffer.concat(this.#fragments))
+
+              this.#loop = true
+              this.#state = parserStates.INFO
+              this.#fragments.length = 0
+              this.run(callback)
+            })
 
             this.#loop = false
             break
@@ -66726,26 +66678,6 @@ class ByteParser extends Writable {
     this.#byteOffset -= n
 
     return buffer
-  }
-
-  writeFragments (fragment) {
-    this.#fragmentsBytes += fragment.length
-    this.#fragments.push(fragment)
-  }
-
-  consumeFragments () {
-    const fragments = this.#fragments
-
-    if (fragments.length === 1) {
-      this.#fragmentsBytes = 0
-      return fragments.shift()
-    }
-
-    const output = Buffer.concat(fragments, this.#fragmentsBytes)
-    this.#fragments = []
-    this.#fragmentsBytes = 0
-
-    return output
   }
 
   parseCloseBody (data) {
@@ -67779,11 +67711,7 @@ class WebSocket extends EventTarget {
     // once this happens, the connection is open
     this[kResponse] = response
 
-    const maxPayloadSize = this[kController]?.dispatcher?.webSocketOptions?.maxPayloadSize
-
-    const parser = new ByteParser(this, parsedExtensions, {
-      maxPayloadSize
-    })
+    const parser = new ByteParser(this, parsedExtensions)
     parser.on('drain', onParserDrain)
     parser.on('error', onParserError.bind(this))
 
@@ -84570,13 +84498,13 @@ class Sanitizer {
                     message: value.message,
                 };
             }
-            if (key === "headers" && isObject(value)) {
+            if (key === "headers") {
                 return this.sanitizeHeaders(value);
             }
-            else if (key === "url" && typeof value === "string") {
+            else if (key === "url") {
                 return this.sanitizeUrl(value);
             }
-            else if (key === "query" && isObject(value)) {
+            else if (key === "query") {
                 return this.sanitizeQuery(value);
             }
             else if (key === "body") {
@@ -85226,14 +85154,15 @@ function getHeaderName() {
 async function userAgentPlatform_setPlatformSpecificData(map) {
     if (process && process.versions) {
         const osInfo = `${os.type()} ${os.release()}; ${os.arch()}`;
-        if (process.versions.bun) {
-            map.set("Bun", `${process.versions.bun} (${osInfo})`);
+        const versions = process.versions;
+        if (versions.bun) {
+            map.set("Bun", `${versions.bun} (${osInfo})`);
         }
-        else if (process.versions.deno) {
-            map.set("Deno", `${process.versions.deno} (${osInfo})`);
+        else if (versions.deno) {
+            map.set("Deno", `${versions.deno} (${osInfo})`);
         }
-        else if (process.versions.node) {
-            map.set("Node", `${process.versions.node} (${osInfo})`);
+        else if (versions.node) {
+            map.set("Node", `${versions.node} (${osInfo})`);
         }
     }
 }
@@ -85540,13 +85469,12 @@ function isSystemError(err) {
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/constants.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-const constants_SDK_VERSION = "0.3.5";
+const constants_SDK_VERSION = "0.3.4";
 const constants_DEFAULT_RETRY_POLICY_COUNT = 3;
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./node_modules/@typespec/ts-http-runtime/dist/esm/policies/retryPolicy.js
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
 
 
 
@@ -85581,11 +85509,11 @@ function retryPolicy_retryPolicy(strategies, options = { maxRetries: constants_D
                     // RestErrors are valid targets for the retry strategies.
                     // If none of the retry strategies can work with them, they will be thrown later in this policy.
                     // If the received error is not a RestError, it is immediately thrown.
-                    if (!restError_isRestError(e)) {
+                    responseError = e;
+                    if (!e || responseError.name !== "RestError") {
                         throw e;
                     }
-                    responseError = e;
-                    response = e.response;
+                    response = responseError.response;
                 }
                 if (request.abortSignal?.aborted) {
                     logger.error(`Retry ${retryCount}: Request aborted.`);
@@ -85986,15 +85914,16 @@ function setProxyAgentOnRequest(request, cachedAgents, proxyUrl) {
     if (request.tlsSettings) {
         log_logger.warning("TLS settings are not supported in combination with custom Proxy, certificates provided to the client will be ignored.");
     }
+    const headers = request.headers.toJSON();
     if (isInsecure) {
         if (!cachedAgents.httpProxyAgent) {
-            cachedAgents.httpProxyAgent = new http_proxy_agent_dist.HttpProxyAgent(proxyUrl);
+            cachedAgents.httpProxyAgent = new http_proxy_agent_dist.HttpProxyAgent(proxyUrl, { headers });
         }
         request.agent = cachedAgents.httpProxyAgent;
     }
     else {
         if (!cachedAgents.httpsProxyAgent) {
-            cachedAgents.httpsProxyAgent = new dist.HttpsProxyAgent(proxyUrl);
+            cachedAgents.httpsProxyAgent = new dist.HttpsProxyAgent(proxyUrl, { headers });
         }
         request.agent = cachedAgents.httpsProxyAgent;
     }
@@ -86046,13 +85975,13 @@ function typeGuards_isBinaryBody(body) {
         (body instanceof Uint8Array ||
             typeGuards_isReadableStream(body) ||
             typeof body === "function" ||
-            (typeof Blob !== "undefined" && body instanceof Blob)));
+            body instanceof Blob));
 }
 function typeGuards_isReadableStream(x) {
     return isNodeReadableStream(x) || isWebReadableStream(x);
 }
 function typeGuards_isBlob(x) {
-    return typeof Blob !== "undefined" && x instanceof Blob;
+    return typeof x.stream === "function";
 }
 //# sourceMappingURL=typeGuards.js.map
 // EXTERNAL MODULE: external "stream"
@@ -86677,14 +86606,9 @@ async function sendRequest_sendRequest(method, url, pipeline, options = {}, cust
  * @returns returns the content-type
  */
 function getRequestContentType(options = {}) {
-    if (options.contentType) {
-        return options.contentType;
-    }
-    const headerContentType = options.headers?.["content-type"];
-    if (typeof headerContentType === "string") {
-        return headerContentType;
-    }
-    return getContentType(options.body);
+    return (options.contentType ??
+        options.headers?.["content-type"] ??
+        getContentType(options.body));
 }
 /**
  * Function to determine the content-type of a body
@@ -86755,11 +86679,8 @@ function getRequestBody(body, contentType = "") {
     if (isBlob(body)) {
         return { body };
     }
-    if (isReadableStream(body)) {
+    if (isReadableStream(body) || typeof body === "function") {
         return { body };
-    }
-    if (typeof body === "function") {
-        return { body: body };
     }
     if (ArrayBuffer.isView(body)) {
         return { body: body instanceof Uint8Array ? body : JSON.stringify(body) };
@@ -91976,7 +91897,6 @@ function convertHttpClient(requestPolicyClient) {
 
 
 
-
 //# sourceMappingURL=index.js.map
 ;// CONCATENATED MODULE: ./node_modules/path-expression-matcher/src/Expression.js
 /**
@@ -96949,7 +96869,7 @@ function extractNamespace(rawTagName) {
 }
 
 class OrderedObjParser {
-  constructor(options, externalEntities) {
+  constructor(options) {
     this.options = options;
     this.currentNode = null;
     this.tagsNodeStack = [];
@@ -96972,7 +96892,7 @@ class OrderedObjParser {
       if (typeof this.options.htmlEntities === "object") namedEntities = this.options.htmlEntities;
       else if (this.options.htmlEntities === true) namedEntities = { ...COMMON_HTML, ...CURRENCY };
       this.entityDecoder = new EntityDecoder({
-        namedEntities: { ...namedEntities, ...externalEntities },
+        namedEntities: namedEntities,
         numericAllowed: this.options.htmlEntities,
         limit: {
           maxTotalExpansions: this.options.processEntities.maxTotalExpansions,
@@ -97149,7 +97069,7 @@ function buildAttributesMap(attrStr, jPath, tagName, force = false) {
 
     if (!hasAttrs) return;
 
-    if (options.attributesGroupName && !options.preserveOrder) {
+    if (options.attributesGroupName) {
       const attrCollection = {};
       attrCollection[options.attributesGroupName] = attrs;
       return attrCollection;
@@ -97535,15 +97455,11 @@ function isItStopNode() {
  * @returns 
  */
 function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
-  //TODO: ignore boolean attributes in tag expression
-  //TODO: if ignore attributes, dont read full attribute expression but the end. But read for xml declaration
   let attrBoundary = 0;
+  const chars = [];
   const len = xmlData.length;
   const closeCode0 = closingChar.charCodeAt(0);
   const closeCode1 = closingChar.length > 1 ? closingChar.charCodeAt(1) : -1;
-
-  let result = '';
-  let segmentStart = i;
 
   for (let index = i; index < len; index++) {
     const code = xmlData.charCodeAt(index);
@@ -97555,18 +97471,17 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
     } else if (code === closeCode0) {
       if (closeCode1 !== -1) {
         if (xmlData.charCodeAt(index + 1) === closeCode1) {
-          result += xmlData.substring(segmentStart, index);
-          return { data: result, index };
+          return { data: String.fromCharCode(...chars), index };
         }
       } else {
-        result += xmlData.substring(segmentStart, index);
-        return { data: result, index };
+        return { data: String.fromCharCode(...chars), index };
       }
-    } else if (code === 9 && !attrBoundary) { // \t - only replace with space outside attribute values
-      // Flush accumulated segment, add space, start new segment
-      result += xmlData.substring(segmentStart, index) + ' ';
-      segmentStart = index + 1;
+    } else if (code === 9) { // \t
+      chars.push(32); // space
+      continue;
     }
+
+    chars.push(code);
   }
 }
 
@@ -97926,8 +97841,8 @@ class XMLParser {
                 throw Error(`${result.err.msg}:${result.err.line}:${result.err.col}`)
             }
         }
-        const orderedObjParser = new OrderedObjParser(this.options, this.externalEntities);
-        // orderedObjParser.entityDecoder.setExternalEntities(this.externalEntities);
+        const orderedObjParser = new OrderedObjParser(this.options);
+        orderedObjParser.entityDecoder.setExternalEntities(this.externalEntities);
         const orderedResult = orderedObjParser.parseXml(xmlData);
         if (this.options.preserveOrder || orderedResult === undefined) return orderedResult;
         else return prettify(orderedResult, this.options, orderedObjParser.matcher, orderedObjParser.readonlyMatcher);
@@ -97982,34 +97897,20 @@ const xml_common_XML_CHARKEY = "_";
 
 
 function getCommonOptions(options) {
+    var _a;
     return {
         attributesGroupName: xml_common_XML_ATTRKEY,
-        textNodeName: options.xmlCharKey ?? xml_common_XML_CHARKEY,
+        textNodeName: (_a = options.xmlCharKey) !== null && _a !== void 0 ? _a : xml_common_XML_CHARKEY,
         ignoreAttributes: false,
         suppressBooleanAttributes: false,
     };
 }
 function getSerializerOptions(options = {}) {
-    return {
-        ...getCommonOptions(options),
-        attributeNamePrefix: "@_",
-        format: true,
-        suppressEmptyNode: true,
-        indentBy: "",
-        rootNodeName: options.rootName ?? "root",
-        cdataPropName: options.cdataPropName ?? "__cdata",
-    };
+    var _a, _b;
+    return Object.assign(Object.assign({}, getCommonOptions(options)), { attributeNamePrefix: "@_", format: true, suppressEmptyNode: true, indentBy: "", rootNodeName: (_a = options.rootName) !== null && _a !== void 0 ? _a : "root", cdataPropName: (_b = options.cdataPropName) !== null && _b !== void 0 ? _b : "__cdata" });
 }
 function getParserOptions(options = {}) {
-    return {
-        ...getCommonOptions(options),
-        parseAttributeValue: false,
-        parseTagValue: false,
-        attributeNamePrefix: "",
-        stopNodes: options.stopNodes,
-        processEntities: true,
-        trimValues: false,
-    };
+    return Object.assign(Object.assign({}, getCommonOptions(options)), { parseAttributeValue: false, parseTagValue: false, attributeNamePrefix: "", stopNodes: options.stopNodes, processEntities: true, trimValues: false });
 }
 /**
  * Converts given JSON object to XML string
@@ -98048,7 +97949,7 @@ async function parseXML(str, opts = {}) {
     if (!opts.includeRoot) {
         for (const key of Object.keys(parsedXml)) {
             const value = parsedXml[key];
-            return typeof value === "object" ? { ...value } : value;
+            return typeof value === "object" ? Object.assign({}, value) : value;
         }
     }
     return parsedXml;
