@@ -3610,6 +3610,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 
+xml-naming
+MIT
+
 zip-stream
 MIT
 Copyright (c) 2014 Chris Talkington, contributors.
