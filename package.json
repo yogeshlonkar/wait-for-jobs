@@ -36,10 +36,10 @@
     "@actions/artifact": "^6.2.1",
     "@actions/core": "^3.0.1",
     "@actions/github": "9.1.1",
-    "@octokit/core": "^7.0.6",
-    "@octokit/plugin-retry": "^8.0.3",
+    "@octokit/core": "^7.0.7",
+    "@octokit/plugin-retry": "^8.1.1",
     "@octokit/rest": "^22.0.1",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
