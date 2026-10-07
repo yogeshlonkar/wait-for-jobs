@@ -1,0 +1,109 @@
+name: Dependabot dist
+
+# A Dependabot pull request that bumps a package ncc bundles (undici, and
+# brace-expansion through @actions/artifact) or the bundler itself
+# (@vercel/ncc) changes dist/, so check-dist fails until someone rebuilds it.
+# This rebuilds dist/ and pushes it to the pull request's branch.
+#
+# Two jobs, so the push token never shares a runner with dependency code:
+# `build` installs and bundles with a read-only token, no secrets and
+# --ignore-scripts, and `push` only downloads the bundled dist/ and commits it.
+#
+# The push uses DIST_PUSH_TOKEN, a fine-grained token with Contents
+# read-and-write on this repository, stored as a Dependabot secret since a
+# run Dependabot triggers can't read Actions secrets. GITHUB_TOKEN won't do:
+# a push made with it starts no workflows, so the required checks would never
+# run on the new commit. The token's owner becomes the actor of that push,
+# which is what stops this workflow running again on its own commit.
+#
+# Once a commit that isn't Dependabot's is on the branch Dependabot stops
+# rebasing it. `@dependabot recreate` drops the commit and this rebuilds it.
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependabot-dist-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - id: diff
+        run: |
+          git status --short dist/
+          if [ -n "$(git status --porcelain dist/)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.diff.outputs.changed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  push:
+    needs: build
+    if: needs.build.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          TOKEN: ${{ secrets.DIST_PUSH_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::DIST_PUSH_TOKEN is not set as a Dependabot secret, see the header of this workflow"
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.DIST_PUSH_TOKEN }}
+      # A newer Dependabot push cancels this run through `concurrency`, but if
+      # the branch moved anyway, dist/ was built for a commit that is no
+      # longer the head, so leave it to the run for the new head.
+      - id: head
+        env:
+          BUILT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$(git rev-parse HEAD)" = "$BUILT" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch moved past $BUILT, skipping"
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.head.outputs.current == 'true'
+        run: rm -rf dist
+      - if: steps.head.outputs.current == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - if: steps.head.outputs.current == 'true'
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A dist/
+          git commit -m 'Rebuild dist'
+          git push origin "HEAD:$BRANCH"
