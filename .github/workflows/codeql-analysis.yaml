@@ -17,12 +17,13 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+  # Every pull request, Markdown-only ones included. The ruleset on main
+  # requires code scanning results from CodeQL, and a pull request this
+  # workflow skipped has none, so it would sit blocked waiting for them.
+  # Pushes to main still skip Markdown.
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
   schedule:
     - cron: '31 7 * * 3'
 

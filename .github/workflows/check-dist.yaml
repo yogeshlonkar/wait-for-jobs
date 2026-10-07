@@ -53,3 +53,16 @@ jobs:
         with:
           name: dist
           path: dist/
+
+  # Feeds the `required` check the ruleset on main asks for; on-push.yaml has
+  # the rest.
+  required:
+    needs: [check-dist]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULT: ${{ needs.check-dist.result }}
+        run: |
+          echo "$RESULT"
+          [ "$RESULT" = success ]

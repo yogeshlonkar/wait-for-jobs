@@ -67,3 +67,18 @@ jobs:
           outputs-from: output2.json
       - run: |
           echo "Some step that needs job 2:: ${{ fromJSON(steps.wait-for-jobs.outputs.outputs).out2 }}"
+
+  # The ruleset on main requires one check, `required`, rather than naming the
+  # jobs above. check-dist.yaml and markdown.yaml end in a job of the same name,
+  # so a Markdown-only pull request, which skips this workflow, still gets one,
+  # and GitHub requires every check named `required` on a commit to pass.
+  required:
+    needs: [build, job1, job2, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for r in $RESULTS; do [ "$r" = success ] || exit 1; done
