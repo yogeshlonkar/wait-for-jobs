@@ -1,0 +1,5 @@
+// Which files markdownlint-cli2 reads. The rules are in .markdownlint.jsonc.
+{
+  "globs": ["**/*.md"],
+  "ignores": ["**/node_modules/**"]
+}

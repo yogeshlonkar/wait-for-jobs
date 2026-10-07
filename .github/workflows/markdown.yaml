@@ -1,0 +1,43 @@
+name: Markdown
+
+# Lints the Markdown every other workflow ignores. It is the one workflow that
+# runs on Markdown, since Markdown is what it checks.
+#
+# It ends in `required`, the check the ruleset on main asks for, so a pull
+# request that touches only Markdown gets that check from here. Without it
+# such a pull request sat waiting for checks that never started.
+on:
+  push:
+    branches: [main]
+    paths: &markdown
+      - '**/*.md'
+      - '.markdownlint.jsonc'
+      - '.markdownlint-cli2.jsonc'
+      - '.github/workflows/markdown.yaml'
+  pull_request:
+    paths: *markdown
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: markdownlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Pinned so a new release's new rule fails here on purpose rather than
+      # on an unrelated pull request.
+      - run: npx --yes markdownlint-cli2@0.23.0
+
+  required:
+    needs: [lint]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULT: ${{ needs.lint.result }}
+        run: |
+          echo "$RESULT"
+          [ "$RESULT" = success ]

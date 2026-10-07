@@ -1,0 +1,6 @@
+// markdownlint's default rules, run by .github/workflows/markdown.yaml.
+// Each change from the defaults says why.
+{
+  // README.md keeps one paragraph per line.
+  "MD013": false
+}
