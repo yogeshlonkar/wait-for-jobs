@@ -10,7 +10,8 @@
     "format-check": "prettier --check '**/*.ts'",
     "lint": "eslint src/**/*.ts",
     "test": "vitest --coverage --run",
-    "all": "npm run format && npm run lint && npm test && npm run build"
+    "check-dist": "scripts/check-dist.sh",
+    "all":"npm run format && npm run lint && npm test && npm run build"
   },
   "type": "module",
   "exports": {
